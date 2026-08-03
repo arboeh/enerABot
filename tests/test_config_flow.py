@@ -80,3 +80,77 @@ async def test_form_already_configured(hass: HomeAssistant) -> None:
 
     assert result2["type"] == FlowResultType.ABORT
     assert result2["reason"] == "already_configured"
+
+
+async def test_form_import_only(hass: HomeAssistant) -> None:
+    """Test we can configure with only an import sensor."""
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Import Only",
+            "import_sensor": "sensor.test_import",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert result2["data"][CONF_IMPORT_SENSOR] == "sensor.test_import"
+    assert result2["data"].get(CONF_EXPORT_SENSOR) is None
+
+
+async def test_form_export_only(hass: HomeAssistant) -> None:
+    """Test we can configure with only an export sensor."""
+    hass.states.async_set("sensor.test_export", "50.0")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Export Only",
+            "export_sensor": "sensor.test_export",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert result2["data"][CONF_EXPORT_SENSOR] == "sensor.test_export"
+    assert result2["data"].get(CONF_IMPORT_SENSOR) is None
+
+
+async def test_form_no_sensor_configured_fails(hass: HomeAssistant) -> None:
+    """Test we cannot proceed without any sensor configured."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test No Sensor",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["errors"] == {"base": "cannot_connect"}
+
+
+async def test_form_with_initial_import_meter_value_sets_offset(hass: HomeAssistant) -> None:
+    """Test that providing initial import reading calculates offset at setup."""
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Offset",
+            "import_sensor": "sensor.test_import",
+            "initial_import_meter_value": 150.0,
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    options = result2["options"]
+    assert options["offset_import"] == 50.0
+    assert "last_correction_import" in options

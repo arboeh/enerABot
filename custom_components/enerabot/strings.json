@@ -7,7 +7,9 @@
         "data": {
           "name": "Meter Pair Name",
           "import_sensor": "Import Sensor (1.8.0)",
-          "export_sensor": "Export Sensor (2.8.0)"
+          "initial_import_meter_value": "Initial Import Reading (kWh, optional)",
+          "export_sensor": "Export Sensor (2.8.0)",
+          "initial_export_meter_value": "Initial Export Reading (kWh, optional)"
         }
       }
     },

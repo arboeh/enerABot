@@ -38,9 +38,54 @@ def mock_config_entry(hass):
 
 
 @pytest.fixture
+def mock_config_entry_export_only(hass):
+    """Create a mock config entry with only an export sensor."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Test Export Only",
+        data={
+            CONF_NAME: "Test Export Only",
+            CONF_EXPORT_SENSOR: "sensor.test_export",
+        },
+        options={
+            "offset_export": 0.5,
+        },
+        unique_id="none_sensor.test_export",
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+@pytest.fixture
+def mock_config_entry_import_only(hass):
+    """Create a mock config entry with only an import sensor."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Test Import Only",
+        data={
+            CONF_NAME: "Test Import Only",
+            CONF_IMPORT_SENSOR: "sensor.test_import",
+        },
+        options={
+            "offset_import": 1.5,
+        },
+        unique_id="sensor.test_import_none",
+    )
+    entry.add_to_hass(hass)
+    return entry
+
+
+@pytest.fixture
 def mock_coordinator(hass, mock_config_entry):
     """Create a coordinator."""
     coordinator = EnerABotCoordinator(hass, mock_config_entry)
+    return coordinator
+
+
+@pytest.fixture
+def mock_coordinator_export_only(hass, mock_config_entry_export_only):
+    """Create a coordinator with only an export sensor."""
+    coordinator = EnerABotCoordinator(hass, mock_config_entry_export_only)
     return coordinator
 
 
@@ -89,3 +134,13 @@ async def test_coordinator_update_data_unknown(hass: HomeAssistant, mock_coordin
 
     assert data["import_value"] is None
     assert data["export_value"] is None
+
+
+async def test_coordinator_export_only(hass: HomeAssistant, mock_coordinator_export_only):
+    """Test coordinator with only export sensor configured."""
+    hass.states.async_set("sensor.test_export", "100.0")
+
+    data = await mock_coordinator_export_only._async_update_data()
+
+    assert data["import_value"] is None
+    assert data["export_value"] == 100.5

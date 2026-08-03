@@ -33,10 +33,11 @@ async def async_setup_entry(
     """Set up enerABot sensors."""
     coordinator: EnerABotCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    entities = [
-        EnerABotImportSensor(coordinator, entry),
-        EnerABotExportSensor(coordinator, entry),
-    ]
+    entities = []
+    if entry.data.get(CONF_IMPORT_SENSOR):
+        entities.append(EnerABotImportSensor(coordinator, entry))
+    if entry.data.get(CONF_EXPORT_SENSOR):
+        entities.append(EnerABotExportSensor(coordinator, entry))
 
     async_add_entities(entities)
 

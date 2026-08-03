@@ -34,9 +34,17 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage the options - main menu."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        menu_options: list[str] = []
+        if self._config_entry.data.get(CONF_IMPORT_SENSOR):
+            menu_options.append("import")
+        if self._config_entry.data.get(CONF_EXPORT_SENSOR):
+            menu_options.append("export")
         return self.async_show_menu(
             step_id="init",
-            menu_options=["import", "export"],
+            menu_options=menu_options,
         )
 
     async def async_step_import(self, user_input: dict[str, Any] | None = None) -> FlowResult:

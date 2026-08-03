@@ -10,7 +10,7 @@ import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.enerabot.const import DOMAIN
+from custom_components.enerabot.const import CONF_EXPORT_SENSOR, CONF_IMPORT_SENSOR, DOMAIN
 
 MOCK_CONFIG = {
     "name": "Test Meter",
@@ -34,6 +34,40 @@ async def setup_entry(hass, mock_coordinator):
     entry.add_to_hass(hass)
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN]["test_entry"] = mock_coordinator
+    return entry
+
+
+@pytest.fixture
+async def setup_entry_import_only(hass, mock_coordinator):
+    """Set up a config entry with only an import sensor."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "name": "Test Import Only",
+            CONF_IMPORT_SENSOR: "sensor.test_import",
+        },
+        entry_id="test_entry_import_only",
+    )
+    entry.add_to_hass(hass)
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN]["test_entry_import_only"] = mock_coordinator
+    return entry
+
+
+@pytest.fixture
+async def setup_entry_export_only(hass, mock_coordinator):
+    """Set up a config entry with only an export sensor."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            "name": "Test Export Only",
+            CONF_EXPORT_SENSOR: "sensor.test_export",
+        },
+        entry_id="test_entry_export_only",
+    )
+    entry.add_to_hass(hass)
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN]["test_entry_export_only"] = mock_coordinator
     return entry
 
 
@@ -78,3 +112,23 @@ async def test_options_flow_export_shows_form(hass, setup_entry):
     assert result["type"] == "form"
     assert result["step_id"] == "export"
     assert result["errors"] == {}
+
+
+async def test_options_flow_menu_import_only(hass, setup_entry_import_only):
+    """Menu should show only import option when only import sensor is configured."""
+    result = await hass.config_entries.options.async_init(setup_entry_import_only.entry_id)
+
+    assert result["type"] == "menu"
+    assert result["step_id"] == "init"
+    assert "import" in result["menu_options"]
+    assert "export" not in result["menu_options"]
+
+
+async def test_options_flow_menu_export_only(hass, setup_entry_export_only):
+    """Menu should show only export option when only export sensor is configured."""
+    result = await hass.config_entries.options.async_init(setup_entry_export_only.entry_id)
+
+    assert result["type"] == "menu"
+    assert result["step_id"] == "init"
+    assert "export" in result["menu_options"]
+    assert "import" not in result["menu_options"]
