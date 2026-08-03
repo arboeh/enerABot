@@ -37,7 +37,7 @@ async def async_setup_entry(
     async_add_entities([EnerABotSensor(coordinator, entry)])
 
 
-class EnerABotSensor(CoordinatorEntity, SensorEntity):
+class EnerABotSensor(CoordinatorEntity[EnerABotCoordinator], SensorEntity):  # type: ignore[reportIncompatibleVariableOverride]
     """Sensor for the energy meter (import or export, based on OBIS code)."""
 
     def __init__(self, coordinator: EnerABotCoordinator, entry: ConfigEntry) -> None:
@@ -62,12 +62,12 @@ class EnerABotSensor(CoordinatorEntity, SensorEntity):
         }
 
     @property
-    def native_value(self) -> float | None:
+    def native_value(self) -> float | None:  # type: ignore[reportIncompatibleVariableOverride]
         """Return the state."""
         return self.coordinator.data
 
     @property
-    def extra_state_attributes(self) -> dict:
+    def extra_state_attributes(self) -> dict:  # type: ignore[reportIncompatibleVariableOverride]
         """Return additional attributes."""
         attrs = {}
         offset = self.entry.options.get(OPTION_OFFSET)

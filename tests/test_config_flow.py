@@ -205,6 +205,7 @@ async def test_form_initial_meter_value_ignored_when_sensor_unavailable(
     )
 
     assert result2["type"] == FlowResultType.FORM
+    assert result2["errors"] is not None
     assert result2["errors"]["base"] == "cannot_connect"
 
 

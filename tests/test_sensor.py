@@ -37,6 +37,7 @@ async def test_sensor_import_value(hass: HomeAssistant, setup_integration):
     entry = setup_integration
     entity_registry = er.async_get(hass)
     entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_import")
+    assert entity_id is not None
     state = hass.states.get(entity_id)
     assert state is not None
 
@@ -64,6 +65,7 @@ async def test_sensor_exposes_obis_and_meter_id_attributes(hass: HomeAssistant, 
 
     entity_registry = er.async_get(hass)
     entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{mock_config_entry.entry_id}_import")
+    assert entity_id is not None
     state = hass.states.get(entity_id)
     assert state is not None
     assert state.attributes.get("obis_code") == "1.8.2"
@@ -149,6 +151,7 @@ async def test_sensor_only_import_value(hass: HomeAssistant, setup_import_only):
     entry = setup_import_only
     entity_registry = er.async_get(hass)
     entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_import")
+    assert entity_id is not None
     state = hass.states.get(entity_id)
     assert state is not None
 
@@ -158,6 +161,7 @@ async def test_sensor_only_export_value(hass: HomeAssistant, setup_export_only):
     entry = setup_export_only
     entity_registry = er.async_get(hass)
     entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_export")
+    assert entity_id is not None
     state = hass.states.get(entity_id)
     assert state is not None
 
