@@ -7,7 +7,7 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from homeassistant.core import HomeAssistant, State
+from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.enerabot.const import DOMAIN
@@ -59,8 +59,7 @@ async def test_options_flow_import_shows_form(hass, setup_entry):
 
 async def test_options_flow_import_success(hass, setup_entry):
     """Import correction should complete when sensor is available."""
-    hass.states = MagicMock()
-    hass.states.get.return_value = State("sensor.test_import", "1000.0")
+    hass.states.async_set("sensor.test_import", "1000.0")
     result = await hass.config_entries.options.async_init(setup_entry.entry_id)
     result = await hass.config_entries.options.async_configure(result["flow_id"], user_input={"next_step_id": "import"})
     result = await hass.config_entries.options.async_configure(

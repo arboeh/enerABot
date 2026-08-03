@@ -1,3 +1,5 @@
+# custom_components/enerabot/config_flow.py
+
 """Config flow for the enerABot integration."""
 
 from __future__ import annotations

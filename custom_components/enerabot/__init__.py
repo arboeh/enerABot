@@ -1,3 +1,5 @@
+# custom_components/enerabot/__init__.py
+
 """The enerABot integration."""
 
 from __future__ import annotations

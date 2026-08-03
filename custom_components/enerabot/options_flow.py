@@ -1,3 +1,5 @@
+# custom_components/enerabot/options_flow.py
+
 """Options flow for the enerABot integration."""
 
 from __future__ import annotations
@@ -101,9 +103,7 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
                 OPTION_LAST_CORRECTION_IMPORT: now_iso,
             }
 
-            self.hass.config_entries.async_update_entry(
-                self._config_entry, options=new_options
-            )
+            self.hass.config_entries.async_update_entry(self._config_entry, options=new_options)
 
             return self.async_create_entry(title="", data={})
 
@@ -189,9 +189,7 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
                 OPTION_LAST_CORRECTION_EXPORT: now_iso,
             }
 
-            self.hass.config_entries.async_update_entry(
-                self._config_entry, options=new_options
-            )
+            self.hass.config_entries.async_update_entry(self._config_entry, options=new_options)
 
             return self.async_create_entry(title="", data={})
 

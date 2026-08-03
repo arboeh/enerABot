@@ -1,3 +1,5 @@
+# custom_components/enerabot/coordinator.py
+
 """Coordinator for the enerABot integration."""
 
 import logging

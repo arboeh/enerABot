@@ -38,8 +38,8 @@ def event_loop_policy():
         return asyncio.WindowsSelectorEventLoopPolicy()
     return asyncio.get_event_loop_policy()
 
-pytest_socket.disable_socket = lambda *args, **kwargs: None
 
+pytest_socket.disable_socket = lambda *args, **kwargs: None
 logging.getLogger("asyncio").setLevel(logging.WARNING)
 logging.getLogger("homeassistant").setLevel(logging.WARNING)
 logging.getLogger("custom_components.enerabot").setLevel(logging.INFO)

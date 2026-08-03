@@ -1,3 +1,5 @@
+# custom_components/enerabot/const.py
+
 """Constants for the enerABot integration."""
 
 DOMAIN = "enerabot"

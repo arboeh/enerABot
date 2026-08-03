@@ -1,3 +1,5 @@
+# custom_components/enerabot/sensor.py
+
 """Sensor platform for the enerABot integration."""
 
 import logging
