@@ -10,6 +10,19 @@ import warnings
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
+if sys.platform == "win32":
+    import types
+
+    if sys.modules.get("fcntl") is None:
+        _fcntl_stub = types.ModuleType("fcntl")
+        _fcntl_stub.LOCK_EX = 1
+        _fcntl_stub.LOCK_NB = 2
+        _fcntl_stub.LOCK_SH = 4
+        _fcntl_stub.LOCK_UN = 8
+        _fcntl_stub.flock = lambda *args, **kwargs: None
+        sys.modules["fcntl"] = _fcntl_stub
+
 import pytest_socket
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant

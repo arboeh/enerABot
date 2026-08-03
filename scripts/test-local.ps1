@@ -4,6 +4,7 @@ param(
     [switch]$Lint,
     [switch]$Format,
     [switch]$TypeCheck,
+    [switch]$Tests,
     [switch]$All,
     [switch]$SkipTests,
     [switch]$Force
@@ -12,7 +13,7 @@ param(
 $runLint = $Lint -or $All
 $runFormat = $Format -or $All
 $runTypeCheck = $TypeCheck -or $All
-$runTests = -not $SkipTests
+$runTests = ($Tests -or $All -or (-not $Lint -and -not $Format -and -not $TypeCheck)) -and -not $SkipTests
 
 $venv = ".venv"
 $cacheDir = "$venv/check-cache"
@@ -149,7 +150,7 @@ if ($runTypeCheck) {
 
 # --- Pytest ---
 if ($runTests) {
-    if (Test-CheckCache -Name "tests" -CurrentHash $sourceHash) {
+    if (Test-CheckCache -Name "tests" -CurrentHash $sourceHash -ExplicitRequest $Tests) {
         Write-Host "`n--- Pytest: skipped (no source changes) ---" -ForegroundColor DarkGray
     }
     else {

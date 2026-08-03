@@ -134,8 +134,8 @@ async def test_form_no_sensor_configured_fails(hass: HomeAssistant) -> None:
         result["flow_id"],
         {
             "name": "Test No Sensor",
-            "sensor": None,
-            "obis_code": None,
+            "sensor": "sensor.nonexistent",
+            "obis_code": "1.8.2",
         },
     )
 

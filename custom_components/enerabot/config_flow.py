@@ -164,3 +164,7 @@ class EnerABotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> EnerABotOptionsFlow:
         """Get the options flow for this handler."""
         return EnerABotOptionsFlow(config_entry)
+
+    async def async_step_import(self, user_input: dict[str, Any]) -> ConfigFlowResult:
+        """Handle import of a config entry from a migration or YAML."""
+        return await self.async_step_user(user_input)

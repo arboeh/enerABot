@@ -27,6 +27,7 @@ class EnerABotCoordinator(DataUpdateCoordinator[float | None]):
             hass,
             LOGGER,
             name=DOMAIN,
+            config_entry=config_entry,
             update_interval=timedelta(seconds=UPDATE_INTERVAL),
         )
         self.config_entry = config_entry
