@@ -2,7 +2,7 @@
 
 [🇬🇧 English](README.md) | 🇩🇪 **Deutsch**
 
-## Energiezähler-Offset-Manager für Home Assistant
+## Energiezähler-Offset-Robot für Home Assistant
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Integration-41BDF5?logo=home-assistant)](https://www.home-assistant.io/)
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz)
