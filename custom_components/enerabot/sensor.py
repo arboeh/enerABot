@@ -13,7 +13,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import (
     CONF_EXPORT_SENSOR,
     CONF_IMPORT_SENSOR,
+    CONF_METER_ID_EXPORT,
+    CONF_METER_ID_IMPORT,
     CONF_NAME,
+    CONF_OBIS_CODE_EXPORT,
+    CONF_OBIS_CODE_IMPORT,
+    CONF_TARIFF_PRICE_EXPORT,
+    CONF_TARIFF_PRICE_IMPORT,
     DOMAIN,
     OPTION_LAST_CORRECTION_EXPORT,
     OPTION_LAST_CORRECTION_IMPORT,
@@ -82,6 +88,15 @@ class EnerABotImportSensor(CoordinatorEntity, SensorEntity):
         raw_entity_id = self._entry.data.get(CONF_IMPORT_SENSOR)
         if raw_entity_id is not None:
             attrs["raw_sensor"] = raw_entity_id
+        meter_id = self._entry.options.get(CONF_METER_ID_IMPORT)
+        if meter_id:
+            attrs["meter_id"] = meter_id
+        obis_code = self._entry.options.get(CONF_OBIS_CODE_IMPORT)
+        if obis_code:
+            attrs["obis_code"] = obis_code
+        tariff_price = self._entry.options.get(CONF_TARIFF_PRICE_IMPORT)
+        if tariff_price:
+            attrs["tariff_price"] = tariff_price
         return attrs
 
 
@@ -125,4 +140,13 @@ class EnerABotExportSensor(CoordinatorEntity, SensorEntity):
         raw_entity_id = self._entry.data.get(CONF_EXPORT_SENSOR)
         if raw_entity_id is not None:
             attrs["raw_sensor"] = raw_entity_id
+        meter_id = self._entry.options.get(CONF_METER_ID_EXPORT)
+        if meter_id:
+            attrs["meter_id"] = meter_id
+        obis_code = self._entry.options.get(CONF_OBIS_CODE_EXPORT)
+        if obis_code:
+            attrs["obis_code"] = obis_code
+        tariff_price = self._entry.options.get(CONF_TARIFF_PRICE_EXPORT)
+        if tariff_price:
+            attrs["tariff_price"] = tariff_price
         return attrs

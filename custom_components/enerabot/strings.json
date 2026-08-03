@@ -9,7 +9,14 @@
           "import_sensor": "Import Sensor (1.8.0)",
           "initial_import_meter_value": "Initial Import Reading (kWh, optional)",
           "export_sensor": "Export Sensor (2.8.0)",
-          "initial_export_meter_value": "Initial Export Reading (kWh, optional)"
+          "initial_export_meter_value": "Initial Export Reading (kWh, optional)",
+          "meter_id_import": "Meter ID (Import)",
+          "meter_id_export": "Meter ID (Export)",
+          "obis_code_import": "OBIS Code (Import, e.g. 1.8.2)",
+          "obis_code_export": "OBIS Code (Export, e.g. 2.8.2)",
+          "tariff_price_import": "Import Tariff Price (EUR/kWh)",
+          "tariff_price_export": "Export Tariff Price (EUR/kWh)",
+          "reading_cycle": "Reading Cycle"
         }
       }
     },
@@ -43,6 +50,15 @@
         "data": {
           "meter_value": "Zählerstand Einspeisung (kWh)"
         }
+      }
+    }
+  },
+  "selector": {
+    "reading_cycle": {
+      "options": {
+        "daily": "Daily",
+        "monthly": "Monthly",
+        "manual": "Manual"
       }
     }
   },

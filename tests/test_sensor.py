@@ -171,9 +171,7 @@ async def test_sensor_only_export_value(hass: HomeAssistant, setup_export_only):
     assert state is not None
 
 
-async def test_sensor_import_entity_id_not_duplicated(
-    hass: HomeAssistant, mock_config_entry
-):
+async def test_sensor_import_entity_id_not_duplicated(hass: HomeAssistant, mock_config_entry):
     """Test that the import sensor's entity_id does not duplicate the meter name."""
     hass.states.async_set("sensor.test_import", "100.0")
     hass.states.async_set("sensor.test_export", "50.0")
@@ -185,17 +183,13 @@ async def test_sensor_import_entity_id_not_duplicated(
         await hass.async_block_till_done()
 
     entity_registry = er.async_get(hass)
-    entity_id = entity_registry.async_get_entity_id(
-        "sensor", DOMAIN, f"{mock_config_entry.entry_id}_import"
-    )
+    entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{mock_config_entry.entry_id}_import")
     assert entity_id is not None
     meter_name_slug = slugify(mock_config_entry.data.get(CONF_NAME, mock_config_entry.title))
     assert entity_id.count(meter_name_slug) == 1
 
 
-async def test_sensor_export_entity_id_not_duplicated(
-    hass: HomeAssistant, mock_config_entry
-):
+async def test_sensor_export_entity_id_not_duplicated(hass: HomeAssistant, mock_config_entry):
     """Test that the export sensor's entity_id does not duplicate the meter name."""
     hass.states.async_set("sensor.test_import", "100.0")
     hass.states.async_set("sensor.test_export", "50.0")
@@ -207,17 +201,13 @@ async def test_sensor_export_entity_id_not_duplicated(
         await hass.async_block_till_done()
 
     entity_registry = er.async_get(hass)
-    entity_id = entity_registry.async_get_entity_id(
-        "sensor", DOMAIN, f"{mock_config_entry.entry_id}_export"
-    )
+    entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{mock_config_entry.entry_id}_export")
     assert entity_id is not None
     meter_name_slug = slugify(mock_config_entry.data.get(CONF_NAME, mock_config_entry.title))
     assert entity_id.count(meter_name_slug) == 1
 
 
-async def test_sensor_attr_name_is_just_import_export(
-    hass: HomeAssistant, mock_config_entry
-):
+async def test_sensor_attr_name_is_just_import_export(hass: HomeAssistant, mock_config_entry):
     """Test that _attr_name is exactly 'Import'/'Export', not prefixed with meter name."""
     from custom_components.enerabot.coordinator import EnerABotCoordinator
     from custom_components.enerabot.sensor import (
@@ -233,3 +223,30 @@ async def test_sensor_attr_name_is_just_import_export(
     assert export_sensor._attr_name == "Export"
     assert import_sensor._attr_has_entity_name is True
     assert export_sensor._attr_has_entity_name is True
+
+
+async def test_sensor_exposes_obis_and_meter_id_attributes(hass: HomeAssistant, mock_config_entry):
+    """Test that OBIS code and meter ID appear as extra state attributes."""
+    hass.states.async_set("sensor.test_import", "100.0")
+    hass.states.async_set("sensor.test_export", "50.0")
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={
+            **mock_config_entry.options,
+            "obis_code_import": "1.8.2",
+            "meter_id_import": "1SAG1234567890",
+        },
+    )
+    with patch(
+        "custom_components.enerabot.coordinator.EnerABotCoordinator._async_update_data",
+        return_value={"import_value": 100.5, "export_value": 50.2},
+    ):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    entity_registry = er.async_get(hass)
+    entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{mock_config_entry.entry_id}_import")
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.attributes.get("obis_code") == "1.8.2"
+    assert state.attributes.get("meter_id") == "1SAG1234567890"

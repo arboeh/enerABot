@@ -10,7 +10,14 @@ import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.enerabot.const import CONF_EXPORT_SENSOR, CONF_IMPORT_SENSOR, DOMAIN
+from custom_components.enerabot.const import (
+    CONF_EXPORT_SENSOR,
+    CONF_IMPORT_SENSOR,
+    CONF_METER_ID_IMPORT,
+    CONF_OBIS_CODE_IMPORT,
+    CONF_TARIFF_PRICE_IMPORT,
+    DOMAIN,
+)
 
 MOCK_CONFIG = {
     "name": "Test Meter",
@@ -132,3 +139,23 @@ async def test_options_flow_menu_export_only(hass, setup_entry_export_only):
     assert result["step_id"] == "init"
     assert "export" in result["menu_options"]
     assert "import" not in result["menu_options"]
+
+
+async def test_options_flow_import_updates_metadata(hass, setup_entry):
+    """Import correction should also update OBIS code and meter ID."""
+    hass.states.async_set("sensor.test_import", "1000.0")
+    result = await hass.config_entries.options.async_init(setup_entry.entry_id)
+    result = await hass.config_entries.options.async_configure(result["flow_id"], user_input={"next_step_id": "import"})
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            "meter_value": 1000.0,
+            "meter_id_import": "1SAG9999999999",
+            "obis_code_import": "1.8.2",
+            "tariff_price_import": 0.35,
+        },
+    )
+    assert result["type"] == "create_entry"
+    assert setup_entry.options.get(CONF_METER_ID_IMPORT) == "1SAG9999999999"
+    assert setup_entry.options.get(CONF_OBIS_CODE_IMPORT) == "1.8.2"
+    assert setup_entry.options.get(CONF_TARIFF_PRICE_IMPORT) == 0.35

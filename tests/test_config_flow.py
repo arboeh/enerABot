@@ -13,7 +13,10 @@ import custom_components.enerabot.config_flow as config_flow
 from custom_components.enerabot.const import (
     CONF_EXPORT_SENSOR,
     CONF_IMPORT_SENSOR,
+    CONF_METER_ID_IMPORT,
     CONF_NAME,
+    CONF_OBIS_CODE_IMPORT,
+    CONF_TARIFF_PRICE_IMPORT,
     DOMAIN,
     OPTION_LAST_CORRECTION_IMPORT,
     OPTION_OFFSET_IMPORT,
@@ -195,3 +198,37 @@ async def test_form_initial_meter_value_ignored_when_sensor_unavailable(hass: Ho
 
     assert result2["type"] == FlowResultType.FORM
     assert result2["errors"]["base"] == "cannot_connect"
+
+
+async def test_form_with_metadata_fields_saved(hass: HomeAssistant) -> None:
+    """Test that OBIS code, meter ID and tariff price are persisted."""
+    hass.states.async_set("sensor.test_import", "100.0")
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Metadata",
+            "import_sensor": "sensor.test_import",
+            "meter_id_import": "1SAG1234567890",
+            "obis_code_import": "1.8.2",
+            "tariff_price_import": 0.32,
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert result2["data"]["meter_id_import"] == "1SAG1234567890"
+    assert result2["data"]["obis_code_import"] == "1.8.2"
+    assert result2["data"]["tariff_price_import"] == 0.32
+
+
+async def test_form_metadata_fields_optional(hass: HomeAssistant) -> None:
+    """Test that config succeeds without any metadata fields."""
+    hass.states.async_set("sensor.test_import", "100.0")
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {"name": "Test No Metadata", "import_sensor": "sensor.test_import"},
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert "meter_id_import" not in result2["data"]

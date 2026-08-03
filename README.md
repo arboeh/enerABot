@@ -39,9 +39,13 @@ well.
 - 🔢 **Offset calculation** - enter the real meter reading, enerABot calculates and stores the offset automatically
 - ⚡ **Import and/or export** - configure only an import sensor, only an export sensor, or both - whichever your setup provides
 - 🔌 **Source-agnostic** - works with any total/cumulative energy sensor (single-direction or bidirectional meters)
+- 🧾 **OBIS code metadata** - optionally tag each meter with its OBIS code (e.g. `1.8.2`, `2.8.2`), per IEC 62056-6-1
+- 🆔 **Meter ID tracking** - optionally store the physical meter's serial number/ID per direction
+- 💶 **Tariff price (optional)** - store a EUR/kWh price per direction for future cost calculations
+- 🗓️ **Reading cycle** - optionally mark a meter pair as daily, monthly, or manual reading cadence
 - 🧮 **Coordinator-based updates** - offsets are applied live on every sensor update
 - 🛡️ **Graceful degradation** - unavailable/unknown source sensors don't break statistics (`TOTAL_INCREASING` stays intact)
-- 🕒 **Last correction tracking** - each sensor exposes `last_correction` and `offset` as attributes
+- 🕒 **Last correction tracking** - each sensor exposes `last_correction` and `offset` as attributes, plus optional `obis_code`, `meter_id` and `tariff_price` if configured
 - 🛠️ **HA Services** - `set_energy_meter_import`, `set_energy_meter_export` for automations
 - 🌍 **Multi-language** - English and German translations included
 - **🧪 Extensive Test Coverage**
@@ -67,6 +71,10 @@ well.
 4. enerABot calculates `offset = real_reading - current_sensor_value` and stores it
 5. From then on, the enerABot sensor reports `source_value + offset` - always
    matching the physical meter without you having to read it again
+6. Optionally, you can tag each meter pair with an OBIS code, meter ID,
+   tariff price, and reading cycle - either at setup or later via Options.
+   These fields are purely descriptive metadata and don't affect the offset
+   calculation itself
 
 ## Installation via HACS
 
@@ -86,16 +94,21 @@ well.
 1. Go to **Settings → Devices & Services → Add Integration**
 2. Search for **enerABot**
 3. Select your import sensor, export sensor, or both, and give the meter pair a name
-4. The pair is validated and added automatically
+4. Optionally provide the initial meter reading, meter ID, OBIS code,
+   tariff price, and reading cycle for each configured direction
+5. The pair is validated and added automatically
+
+> All metadata fields (meter ID, OBIS code, tariff price, reading cycle) are
+> optional and can be added or edited later via **Options**.
 
 ## Usage
 
-After setup, open the integration options via **Configure** to correct offsets:
+After setup, open the integration options via **Configure** to correct offsets and update metadata:
 
-| Option                   | Description                                               |
-| ------------------------ | ----------------------------------------------------------|
-| 🔢 Correct Import Meter  | Enter the real meter reading for Bezug (1.8.0)             |
-| 🔢 Correct Export Meter  | Enter the real meter reading for Einspeisung (2.8.0)        |
+| Option                   | Description                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| 🔢 Correct Import Meter  | Enter the real meter reading for Bezug (1.8.0) and optionally update meter ID, OBIS code, price   |
+| 🔢 Correct Export Meter  | Enter the real meter reading for Einspeisung (2.8.0) and optionally update meter ID, OBIS code, price |
 
 ## Entities
 
@@ -106,7 +119,16 @@ For each configured direction, enerABot creates:
 | `sensor.<name>_import`            | Sensor | Import energy value with offset applied       |
 | `sensor.<name>_export`            | Sensor | Export energy value with offset applied       |
 
-Both sensors expose `offset`, `last_correction` and `raw_sensor` as attributes.
+Both sensors expose the following attributes:
+
+| Attribute               | Description                                                  |
+| ------------------------ | ------------------------------------------------------------ |
+| `offset`                | Currently stored offset value                                |
+| `last_correction`       | Timestamp of the last meter reading correction                |
+| `raw_sensor`            | Entity ID of the underlying source sensor                     |
+| `meter_id` (optional)   | Physical meter serial number/ID, if configured                |
+| `obis_code` (optional)  | OBIS code of the register, if configured (e.g. `1.8.2`)        |
+| `tariff_price` (optional) | Stored EUR/kWh price, if configured                        |
 
 ## Services
 
@@ -132,15 +154,22 @@ data:
 
 - Only one import and one export sensor per meter pair
 - No historical offset log; only the most recent offset and correction timestamp are stored
+- No multi-tariff (HT/NT) sensor split - `tariff_price` and `reading_cycle` are metadata only, not yet used for automatic cost or cycle logic
 
 ## Planned Features (future releases)
 
+- 🧾 **Multi-tariff support**
+  Separate sensor slots for HT/NT registers per direction
+- 💶 **Automatic cost calculation**
+  Use the stored `tariff_price` to compute running costs
 - 📊 **Offset history**
   Track all past corrections, not just the latest one
 - 📱 **Lovelace card**
   Dedicated card for quick meter correction without opening options
 - 🔔 **Drift notifications**
   Alert when the calculated offset exceeds a configurable threshold
+- 🔄 **Generalized sensor support**
+  Accept any `total_increasing` sensor with a selectable unit of measurement, not limited to energy
 
 ## Changelog
 

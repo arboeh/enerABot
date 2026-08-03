@@ -39,9 +39,13 @@ andere totale Bezugs-/Einspeisesensor funktioniert genauso gut.
 - 🔢 **Offset-Berechnung** - realen Zählerstand eingeben, enerABot berechnet und speichert den Offset automatisch
 - ⚡ **Bezug und/oder Einspeisung** - nur einen Bezugssensor, nur einen Einspeisesensor oder beide konfigurieren - je nachdem, was dein Setup bereitstellt
 - 🔌 **Quellenunabhängig** - funktioniert mit jedem totalen/kumulativen Energiesensor (Einweg- oder Zweiwegzähler)
+- 🧾 **OBIS-Code-Metadaten** - optional jeden Zähler mit seinem OBIS-Code kennzeichnen (z. B. `1.8.2`, `2.8.2`), nach IEC 62056-6-1
+- 🆔 **Zähler-ID** - optional die Seriennummer/Kennung des physischen Zählers je Richtung speichern
+- 💶 **Tarifpreis (optional)** - EUR/kWh-Preis je Richtung für zukünftige Kostenberechnung speichern
+- 🗓️ **Ablesezyklus** - Zählerpaar optional als täglich, monatlich oder manuell abzulesend markieren
 - 🧮 **Coordinator-basierte Updates** - Offsets werden bei jedem Sensor-Update live angewendet
 - 🛡️ **Robustes Fehlerverhalten** - nicht verfügbare/unbekannte Quellsensoren zerstören keine Statistik (`TOTAL_INCREASING` bleibt intakt)
-- 🕒 **Letzte Korrektur nachvollziehbar** - jeder Sensor zeigt `last_correction` und `offset` als Attribute
+- 🕒 **Letzte Korrektur nachvollziehbar** - jeder Sensor zeigt `last_correction` und `offset` als Attribute, zusätzlich optional `obis_code`, `meter_id` und `tariff_price`, falls konfiguriert
 - 🛠️ **HA-Services** - `set_energy_meter_import`, `set_energy_meter_export` für Automatisierungen
 - 🌍 **Mehrsprachig** - Englische und deutsche Übersetzungen enthalten
 - **🧪 Umfangreiche Testabdeckung**
@@ -67,6 +71,10 @@ andere totale Bezugs-/Einspeisesensor funktioniert genauso gut.
 4. enerABot berechnet `offset = realer_zählerstand - aktueller_sensorwert` und speichert ihn
 5. Ab sofort meldet der enerABot-Sensor `quellwert + offset` - stets passend
    zum physischen Zähler, ohne dass du erneut ablesen musst
+6. Optional kannst du jedes Zählerpaar mit einem OBIS-Code, einer Zähler-ID,
+   einem Tarifpreis und einem Ablesezyklus versehen - entweder direkt bei
+   der Einrichtung oder später über die Optionen. Diese Felder sind rein
+   beschreibende Metadaten und beeinflussen die Offset-Berechnung nicht
 
 ## Installation via HACS
 
@@ -86,16 +94,21 @@ andere totale Bezugs-/Einspeisesensor funktioniert genauso gut.
 1. **Einstellungen → Geräte & Dienste → Integration hinzufügen**
 2. Nach **enerABot** suchen
 3. Bezugssensor, Einspeisesensor oder beide auswählen und dem Zählerpaar einen Namen geben
-4. Das Paar wird validiert und automatisch hinzugefügt
+4. Optional: initialen Zählerstand, Zähler-ID, OBIS-Code, Tarifpreis und
+   Ablesezyklus je konfigurierter Richtung angeben
+5. Das Paar wird validiert und automatisch hinzugefügt
+
+> Alle Metadatenfelder (Zähler-ID, OBIS-Code, Tarifpreis, Ablesezyklus) sind
+> optional und können später über die **Optionen** ergänzt oder geändert werden.
 
 ## Verwendung
 
-Nach der Einrichtung öffnest du über **Konfigurieren** die Optionen, um Offsets zu korrigieren:
+Nach der Einrichtung öffnest du über **Konfigurieren** die Optionen, um Offsets und Metadaten zu korrigieren:
 
-| Option                          | Beschreibung                                              |
-| ------------------------------- | ----------------------------------------------------------|
-| 🔢 Bezugszähler korrigieren     | Realen Zählerstand für Bezug (1.8.0) eingeben               |
-| 🔢 Einspeisungszähler korrigieren | Realen Zählerstand für Einspeisung (2.8.0) eingeben        |
+| Option                            | Beschreibung                                                                                  |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------|
+| 🔢 Bezugszähler korrigieren        | Realen Zählerstand für Bezug (1.8.0) eingeben und optional Zähler-ID, OBIS-Code, Preis aktualisieren |
+| 🔢 Einspeisungszähler korrigieren  | Realen Zählerstand für Einspeisung (2.8.0) eingeben und optional Zähler-ID, OBIS-Code, Preis aktualisieren |
 
 ## Entitäten
 
@@ -106,7 +119,16 @@ Für jede konfigurierte Richtung erstellt enerABot:
 | `sensor.<name>_import`            | Sensor | Bezugswert mit angewendetem Offset              |
 | `sensor.<name>_export`            | Sensor | Einspeisewert mit angewendetem Offset           |
 
-Beide Sensoren zeigen `offset`, `last_correction` und `raw_sensor` als Attribute.
+Beide Sensoren zeigen folgende Attribute:
+
+| Attribut                  | Beschreibung                                                  |
+| --------------------------- | ---------------------------------------------------------- |
+| `offset`                  | Aktuell gespeicherter Offset-Wert                            |
+| `last_correction`         | Zeitstempel der letzten Zählerstand-Korrektur                 |
+| `raw_sensor`              | Entity-ID des zugrunde liegenden Quellsensors                 |
+| `meter_id` (optional)     | Seriennummer/Kennung des physischen Zählers, falls konfiguriert |
+| `obis_code` (optional)    | OBIS-Code des Registers, falls konfiguriert (z. B. `1.8.2`)   |
+| `tariff_price` (optional) | Gespeicherter EUR/kWh-Preis, falls konfiguriert                |
 
 ## Services
 
@@ -132,15 +154,22 @@ data:
 
 - Nur ein Bezugs- und ein Einspeisesensor pro Zählerpaar
 - Keine Offset-Historie; nur der aktuellste Offset und Korrekturzeitpunkt werden gespeichert
+- Keine Mehrtarif-Aufteilung (HT/NT) als eigene Sensoren - `tariff_price` und `reading_cycle` sind bisher reine Metadaten, noch ohne automatische Kosten- oder Zykluslogik
 
 ## Geplante Funktionen (zukünftige Releases)
 
+- 🧾 **Mehrtarif-Unterstützung**
+  Eigene Sensor-Slots für HT/NT-Register je Richtung
+- 💶 **Automatische Kostenberechnung**
+  Nutzung des gespeicherten `tariff_price` zur laufenden Kostenermittlung
 - 📊 **Offset-Historie**
   Alle vergangenen Korrekturen nachvollziehbar machen, nicht nur die letzte
 - 📱 **Lovelace-Karte**
   Eigene Karte für schnelle Zählerkorrektur ohne Öffnen der Optionen
 - 🔔 **Abweichungs-Benachrichtigungen**
   Warnung, wenn der berechnete Offset einen konfigurierbaren Schwellenwert übersteigt
+- 🔄 **Generalisierte Sensor-Unterstützung**
+  Unterstützung beliebiger `total_increasing`-Sensoren mit wählbarer Einheit, nicht nur Energie
 
 ## Changelog
 

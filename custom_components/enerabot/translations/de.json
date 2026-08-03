@@ -9,7 +9,14 @@
           "import_sensor": "Bezug-Sensor (1.8.0)",
           "initial_import_meter_value": "Aktueller realer Zählerstand Bezug (kWh, optional)",
           "export_sensor": "Einspeise-Sensor (2.8.0)",
-          "initial_export_meter_value": "Aktueller realer Zählerstand Einspeisung (kWh, optional)"
+          "initial_export_meter_value": "Aktueller realer Zählerstand Einspeisung (kWh, optional)",
+          "meter_id_import": "Zähler-ID (Import)",
+          "meter_id_export": "Zähler-ID (Export)",
+          "obis_code_import": "OBIS-Code (Import, z.B. 1.8.2)",
+          "obis_code_export": "OBIS-Code (Export, z.B. 2.8.2)",
+          "tariff_price_import": "Tarifpreis Import (EUR/kWh)",
+          "tariff_price_export": "Tarifpreis Export (EUR/kWh)",
+          "reading_cycle": "Ablesezyklus"
         }
       }
     },
@@ -43,6 +50,15 @@
         "data": {
           "meter_value": "Zählerstand Einspeisung (kWh)"
         }
+      }
+    }
+  },
+  "selector": {
+    "reading_cycle": {
+      "options": {
+        "daily": "Täglich",
+        "monthly": "Monatlich",
+        "manual": "Manuell"
       }
     }
   },

@@ -25,6 +25,7 @@ if (!(Test-Path $cacheDir)) {
 function Get-SourceHash {
     param([string[]]$Paths)
     $files = Get-ChildItem -Path $Paths -Recurse -File -Include *.py, *.json, *.yaml, *.yml |
+        Where-Object { $_.FullName -notmatch '__pycache__|\.pytest_cache|\.ruff_cache|\.mypy_cache' } |
         Sort-Object FullName
     $combined = ($files | ForEach-Object { (Get-FileHash $_.FullName).Hash }) -join ""
     if (-not $combined) { return "empty" }
@@ -43,9 +44,10 @@ function Get-ToolVersionHash {
 }
 
 function Test-CheckCache {
-    param([string]$Name, [string]$CurrentHash)
-    $cacheFile = "$cacheDir/$Name.hash"
+    param([string]$Name, [string]$CurrentHash, [bool]$ExplicitRequest = $false)
     if ($Force) { return $false }
+    if ($ExplicitRequest -and -not $All) { return $false }
+    $cacheFile = "$cacheDir/$Name.hash"
     if (!(Test-Path $cacheFile)) { return $false }
     return (Get-Content $cacheFile) -eq $CurrentHash
 }
@@ -92,9 +94,11 @@ $toolVersionHash = Get-ToolVersionHash
 # Combine source hash and tool version hash so dependency upgrades invalidate cache
 $sourceHash = "$sourceHash$toolVersionHash"
 
+Write-Host "DEBUG sourceHash=$sourceHash" -ForegroundColor DarkGray
+
 # --- Ruff Check ---
 if ($runLint) {
-    if (Test-CheckCache -Name "lint" -CurrentHash $sourceHash) {
+    if (Test-CheckCache -Name "lint" -CurrentHash $sourceHash -ExplicitRequest $Lint) {
         Write-Host "`n--- Ruff Check: skipped (no source changes) ---" -ForegroundColor DarkGray
     }
     else {
@@ -111,7 +115,7 @@ if ($runLint) {
 
 # --- Ruff Format Check ---
 if ($runFormat) {
-    if (Test-CheckCache -Name "format" -CurrentHash $sourceHash) {
+    if (Test-CheckCache -Name "format" -CurrentHash $sourceHash -ExplicitRequest $Format) {
         Write-Host "`n--- Ruff Format Check: skipped (no source changes) ---" -ForegroundColor DarkGray
     }
     else {
@@ -128,7 +132,7 @@ if ($runFormat) {
 
 # --- Pyright ---
 if ($runTypeCheck) {
-    if (Test-CheckCache -Name "typecheck" -CurrentHash $sourceHash) {
+    if (Test-CheckCache -Name "typecheck" -CurrentHash $sourceHash -ExplicitRequest $TypeCheck) {
         Write-Host "`n--- Pyright: skipped (no source changes) ---" -ForegroundColor DarkGray
     }
     else {

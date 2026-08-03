@@ -17,12 +17,22 @@ from homeassistant.helpers import selector
 from .const import (
     CONF_EXPORT_SENSOR,
     CONF_IMPORT_SENSOR,
+    CONF_METER_ID_EXPORT,
+    CONF_METER_ID_IMPORT,
     CONF_NAME,
+    CONF_OBIS_CODE_EXPORT,
+    CONF_OBIS_CODE_IMPORT,
+    CONF_READING_CYCLE,
+    CONF_TARIFF_PRICE_EXPORT,
+    CONF_TARIFF_PRICE_IMPORT,
     DOMAIN,
+    OBIS_CODE_OPTIONS,
     OPTION_LAST_CORRECTION_EXPORT,
     OPTION_LAST_CORRECTION_IMPORT,
     OPTION_OFFSET_EXPORT,
     OPTION_OFFSET_IMPORT,
+    READING_CYCLE_MANUAL,
+    READING_CYCLE_OPTIONS,
 )
 from .options_flow import EnerABotOptionsFlow
 
@@ -32,10 +42,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): str,
         vol.Optional(CONF_IMPORT_SENSOR): selector.EntitySelector(
-            selector.EntitySelectorConfig(
-                domain="sensor",
-                multiple=False,
-            )
+            selector.EntitySelectorConfig(domain="sensor", multiple=False)
         ),
         vol.Optional("initial_import_meter_value"): selector.NumberSelector(
             selector.NumberSelectorConfig(
@@ -46,11 +53,25 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
                 mode=selector.NumberSelectorMode.BOX,
             )
         ),
-        vol.Optional(CONF_EXPORT_SENSOR): selector.EntitySelector(
-            selector.EntitySelectorConfig(
-                domain="sensor",
-                multiple=False,
+        vol.Optional(CONF_METER_ID_IMPORT): str,
+        vol.Optional(CONF_OBIS_CODE_IMPORT): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=OBIS_CODE_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+                custom_value=True,
             )
+        ),
+        vol.Optional(CONF_TARIFF_PRICE_IMPORT): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0,
+                max=9999,
+                step=0.001,
+                unit_of_measurement="EUR/kWh",
+                mode=selector.NumberSelectorMode.BOX,
+            )
+        ),
+        vol.Optional(CONF_EXPORT_SENSOR): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", multiple=False)
         ),
         vol.Optional("initial_export_meter_value"): selector.NumberSelector(
             selector.NumberSelectorConfig(
@@ -59,6 +80,30 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
                 step=1,
                 unit_of_measurement="kWh",
                 mode=selector.NumberSelectorMode.BOX,
+            )
+        ),
+        vol.Optional(CONF_METER_ID_EXPORT): str,
+        vol.Optional(CONF_OBIS_CODE_EXPORT): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=OBIS_CODE_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+                custom_value=True,
+            )
+        ),
+        vol.Optional(CONF_TARIFF_PRICE_EXPORT): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0,
+                max=9999,
+                step=0.001,
+                unit_of_measurement="EUR/kWh",
+                mode=selector.NumberSelectorMode.BOX,
+            )
+        ),
+        vol.Optional(CONF_READING_CYCLE, default=READING_CYCLE_MANUAL): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=READING_CYCLE_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+                translation_key="reading_cycle",
             )
         ),
     }
