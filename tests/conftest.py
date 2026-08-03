@@ -2,6 +2,7 @@
 
 """Fixtures for enerABot tests."""
 
+import asyncio
 import logging
 import sys
 import uuid
@@ -26,8 +27,6 @@ from custom_components.enerabot.const import (
 )
 
 if sys.platform == "win32":
-    import asyncio
-
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
