@@ -1,6 +1,6 @@
 {
   "domain": "enerabot",
-  "name": "enerABot - Energy Meter Offset Manager",
+  "name": "enerABot - Energy Meter Offset Robot",
   "codeowners": ["@arboeh"],
   "config_flow": true,
   "dependencies": [],
