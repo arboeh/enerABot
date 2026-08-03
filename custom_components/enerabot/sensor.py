@@ -51,7 +51,7 @@ class EnerABotImportSensor(CoordinatorEntity, SensorEntity):
 
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_import"
-        self._attr_name = f"{entry.title} Import"
+        self._attr_name = "Import"
         self._attr_has_entity_name = True
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -94,7 +94,7 @@ class EnerABotExportSensor(CoordinatorEntity, SensorEntity):
 
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_export"
-        self._attr_name = f"{entry.title} Export"
+        self._attr_name = "Export"
         self._attr_has_entity_name = True
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
