@@ -10,7 +10,12 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 import custom_components.enerabot.config_flow as config_flow
-from custom_components.enerabot.const import DOMAIN
+from custom_components.enerabot.const import (
+    CONF_EXPORT_SENSOR,
+    CONF_IMPORT_SENSOR,
+    CONF_NAME,
+    DOMAIN,
+)
 
 
 async def test_form(hass: HomeAssistant) -> None:

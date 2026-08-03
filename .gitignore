@@ -16,3 +16,4 @@ home-assistant_v2.db
 .coverage
 .pytest_cache/
 *.egg-info/
+REVIEW_REPORT.md

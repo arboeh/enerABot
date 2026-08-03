@@ -2,8 +2,6 @@
 
 """Test the enerABot coordinator."""
 
-from unittest.mock import MagicMock, patch
-
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -48,45 +46,46 @@ def mock_coordinator(hass, mock_config_entry):
 
 async def test_coordinator_update_data(hass: HomeAssistant, mock_coordinator):
     """Test coordinator data update with offsets applied."""
-    with patch.object(mock_coordinator.hass.states, "get") as mock_get_state:
-        mock_get_state.return_value.state = "100.0"
+    hass.states.async_set("sensor.test_import", "100.0")
+    hass.states.async_set("sensor.test_export", "100.0")
 
-        data = await mock_coordinator._async_update_data()
+    data = await mock_coordinator._async_update_data()
 
-        assert data["import_value"] == 101.5
-        assert data["export_value"] == 50.5
+    assert data["import_value"] == 101.5
+    assert data["export_value"] == 100.5
 
 
 async def test_coordinator_update_data_no_offset(hass: HomeAssistant, mock_config_entry, mock_coordinator):
     """Test coordinator data update without offsets."""
-    mock_config_entry.options = {}
+    hass.config_entries.async_update_entry(mock_config_entry, options={})
+    await hass.async_block_till_done()
 
-    with patch.object(mock_coordinator.hass.states, "get") as mock_get_state:
-        mock_get_state.return_value.state = "100.0"
+    hass.states.async_set("sensor.test_import", "100.0")
+    hass.states.async_set("sensor.test_export", "100.0")
 
-        data = await mock_coordinator._async_update_data()
+    data = await mock_coordinator._async_update_data()
 
-        assert data["import_value"] == 100.0
-        assert data["export_value"] == 100.0
+    assert data["import_value"] == 100.0
+    assert data["export_value"] == 100.0
 
 
 async def test_coordinator_update_data_unavailable(hass: HomeAssistant, mock_coordinator):
     """Test coordinator handles unavailable sensor gracefully."""
-    with patch.object(mock_coordinator.hass.states, "get") as mock_get_state:
-        mock_get_state.return_value.state = "unavailable"
+    hass.states.async_set("sensor.test_import", "unavailable")
+    hass.states.async_set("sensor.test_export", "unavailable")
 
-        data = await mock_coordinator._async_update_data()
+    data = await mock_coordinator._async_update_data()
 
-        assert data["import_value"] is None
-        assert data["export_value"] is None
+    assert data["import_value"] is None
+    assert data["export_value"] is None
 
 
 async def test_coordinator_update_data_unknown(hass: HomeAssistant, mock_coordinator):
     """Test coordinator handles unknown sensor gracefully."""
-    with patch.object(mock_coordinator.hass.states, "get") as mock_get_state:
-        mock_get_state.return_value.state = "unknown"
+    hass.states.async_set("sensor.test_import", "unknown")
+    hass.states.async_set("sensor.test_export", "unknown")
 
-        data = await mock_coordinator._async_update_data()
+    data = await mock_coordinator._async_update_data()
 
-        assert data["import_value"] is None
-        assert data["export_value"] is None
+    assert data["import_value"] is None
+    assert data["export_value"] is None

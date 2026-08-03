@@ -2,18 +2,15 @@
 
 """Tests for the enerABot __init__ module."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.enerabot import (
     _calculate_and_store_offset,
-    _register_services,
     async_reload_entry,
-    async_setup_entry,
     async_unload_entry,
 )
 from custom_components.enerabot.const import (
@@ -47,11 +44,8 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
     return entry
 
 
-async def test_register_services_import(hass: HomeAssistant, mock_config_entry) -> None:
+async def test_register_services_import(hass: HomeAssistant, setup_integration) -> None:
     """Test that the import service registers and sets the offset."""
-    mock_config_entry.add_to_hass(hass)
-    hass.data.setdefault(DOMAIN, {})
-
     with patch(
         "custom_components.enerabot._calculate_and_store_offset",
         new_callable=AsyncMock,
@@ -67,16 +61,13 @@ async def test_register_services_import(hass: HomeAssistant, mock_config_entry) 
         )
         mock_calc.assert_called_once()
         call_args = mock_calc.call_args
-        assert call_args[1]["entity_id"] == "sensor.test_import"
-        assert call_args[1]["meter_value"] == 1234.5
+        assert call_args[0][1] == "sensor.test_import"
+        assert call_args[0][2] == 1234.5
         assert call_args[1]["is_import"] is True
 
 
-async def test_register_services_export(hass: HomeAssistant, mock_config_entry) -> None:
+async def test_register_services_export(hass: HomeAssistant, setup_integration) -> None:
     """Test that the export service registers and sets the offset."""
-    mock_config_entry.add_to_hass(hass)
-    hass.data.setdefault(DOMAIN, {})
-
     with patch(
         "custom_components.enerabot._calculate_and_store_offset",
         new_callable=AsyncMock,
@@ -92,8 +83,8 @@ async def test_register_services_export(hass: HomeAssistant, mock_config_entry) 
         )
         mock_calc.assert_called_once()
         call_args = mock_calc.call_args
-        assert call_args[1]["entity_id"] == "sensor.test_export"
-        assert call_args[1]["meter_value"] == 567.8
+        assert call_args[0][1] == "sensor.test_export"
+        assert call_args[0][2] == 567.8
         assert call_args[1]["is_import"] is False
 
 
@@ -109,14 +100,12 @@ async def test_calculate_and_store_offset_no_matching_entry(hass: HomeAssistant,
 
 async def test_async_unload_entry(hass: HomeAssistant, mock_config_entry) -> None:
     """Test that async_unload_entry removes the coordinator and deregisters services."""
-    mock_config_entry.add_to_hass(hass)
-    hass.data.setdefault(DOMAIN, {})
-
     with patch(
-        "custom_components.enerabot.EnerABotCoordinator.async_config_entry_first_refresh",
-        new=AsyncMock(),
+        "custom_components.enerabot.coordinator.EnerABotCoordinator._async_update_data",
+        return_value={"import_value": 100.5, "export_value": 50.2},
     ):
-        await async_setup_entry(hass, mock_config_entry)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
     assert mock_config_entry.entry_id in hass.data[DOMAIN]
 
@@ -128,22 +117,24 @@ async def test_async_unload_entry(hass: HomeAssistant, mock_config_entry) -> Non
 
 async def test_async_reload_entry(hass: HomeAssistant, mock_config_entry) -> None:
     """Test that async_reload_entry unloads and sets up the entry again."""
-    mock_config_entry.add_to_hass(hass)
-    hass.data.setdefault(DOMAIN, {})
-
     with patch(
-        "custom_components.enerabot.EnerABotCoordinator.async_config_entry_first_refresh",
-        new=AsyncMock(),
+        "custom_components.enerabot.coordinator.EnerABotCoordinator._async_update_data",
+        return_value={"import_value": 100.5, "export_value": 50.2},
     ):
-        await async_setup_entry(hass, mock_config_entry)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
 
     assert mock_config_entry.entry_id in hass.data[DOMAIN]
 
     with (
-        patch.object(hass.config_entries, "async_unload", new=AsyncMock(return_value=True)),
+        patch.object(hass.config_entries, "async_unload_platforms", new=AsyncMock(return_value=True)),
         patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock()),
         patch(
-            "custom_components.enerabot.EnerABotCoordinator.async_config_entry_first_refresh",
+            "custom_components.enerabot.coordinator.EnerABotCoordinator.async_config_entry_first_refresh",
+            new=AsyncMock(),
+        ),
+        patch(
+            "custom_components.enerabot.coordinator.EnerABotCoordinator.async_start_state_listener",
             new=AsyncMock(),
         ),
     ):

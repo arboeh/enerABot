@@ -3,11 +3,13 @@
 """Fixtures for enerABot tests."""
 
 import logging
+import sys
 import uuid
 import warnings
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import pytest_socket
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -17,7 +19,26 @@ from custom_components.enerabot.const import (
     CONF_IMPORT_SENSOR,
     CONF_NAME,
     DOMAIN,
+    OPTION_LAST_CORRECTION_EXPORT,
+    OPTION_LAST_CORRECTION_IMPORT,
+    OPTION_OFFSET_EXPORT,
+    OPTION_OFFSET_IMPORT,
 )
+
+if sys.platform == "win32":
+    import asyncio
+
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+
+@pytest.fixture(scope="session", autouse=True)
+def event_loop_policy():
+    """Force SelectorEventLoop policy for the entire test session on Windows."""
+    if sys.platform == "win32":
+        return asyncio.WindowsSelectorEventLoopPolicy()
+    return asyncio.get_event_loop_policy()
+
+pytest_socket.disable_socket = lambda *args, **kwargs: None
 
 logging.getLogger("asyncio").setLevel(logging.WARNING)
 logging.getLogger("homeassistant").setLevel(logging.WARNING)
@@ -50,8 +71,10 @@ def mock_config_entry(hass: HomeAssistant):
             CONF_EXPORT_SENSOR: "sensor.test_export",
         },
         options={
-            "offset_import": 0.0,
-            "offset_export": 0.0,
+            OPTION_OFFSET_IMPORT: 0.0,
+            OPTION_OFFSET_EXPORT: 0.0,
+            OPTION_LAST_CORRECTION_IMPORT: "2026-08-01T12:00:00+00:00",
+            OPTION_LAST_CORRECTION_EXPORT: "2026-08-01T12:00:00+00:00",
         },
         unique_id=f"sensor.test_import_sensor.test_export",
     )

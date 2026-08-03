@@ -51,29 +51,11 @@
       "fields": {
         "entity_id": {
           "name": "Import Sensor",
-          "description": "The import energy sensor entity_id",
-          "required": true,
-          "example": "sensor.my_import",
-          "selector": {
-            "entity": {
-              "domain": "sensor"
-            }
-          }
+          "description": "The import energy sensor entity_id"
         },
         "meter_value": {
           "name": "Meter Value",
-          "description": "The current real Zählerstand Bezug (1.8.0) in kWh",
-          "required": true,
-          "example": "1234.5",
-          "selector": {
-            "number": {
-              "min": 0,
-              "max": 999999,
-              "step": 1,
-              "unit_of_measurement": "kWh",
-              "mode": "box"
-            }
-          }
+          "description": "The current real Zählerstand Bezug (1.8.0) in kWh"
         }
       }
     },
@@ -83,29 +65,11 @@
       "fields": {
         "entity_id": {
           "name": "Export Sensor",
-          "description": "The export energy sensor entity_id",
-          "required": true,
-          "example": "sensor.my_export",
-          "selector": {
-            "entity": {
-              "domain": "sensor"
-            }
-          }
+          "description": "The export energy sensor entity_id"
         },
         "meter_value": {
           "name": "Meter Value",
-          "description": "The current real Zählerstand Einspeisung (2.8.0) in kWh",
-          "required": true,
-          "example": "567.8",
-          "selector": {
-            "number": {
-              "min": 0,
-              "max": 999999,
-              "step": 1,
-              "unit_of_measurement": "kWh",
-              "mode": "box"
-            }
-          }
+          "description": "The current real Zählerstand Einspeisung (2.8.0) in kWh"
         }
       }
     }

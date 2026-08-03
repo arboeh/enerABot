@@ -32,7 +32,10 @@ async def test_sensor_export_created(hass: HomeAssistant, setup_integration):
 
 async def test_sensor_import_value(hass: HomeAssistant, setup_integration):
     """Test import sensor value."""
-    state = hass.states.get("sensor.test_meter_import")
+    entry = setup_integration
+    entity_registry = er.async_get(hass)
+    entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_import")
+    state = hass.states.get(entity_id)
     assert state is not None
 
 

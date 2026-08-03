@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryNotReady
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -23,6 +24,8 @@ from .coordinator import EnerABotCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor"]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -141,7 +144,7 @@ async def _calculate_and_store_offset(
             correction_key: now_iso,
         }
 
-        await hass.config_entries.async_update_options(entry, new_options)
+        hass.config_entries.async_update_entry(entry, options=new_options)
 
         _LOGGER.info(
             "Offset for %s (%s) set to %s (meter_value=%s, current=%s)",

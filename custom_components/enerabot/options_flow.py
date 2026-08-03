@@ -101,7 +101,9 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
                 OPTION_LAST_CORRECTION_IMPORT: now_iso,
             }
 
-            await self.hass.config_entries.async_update_options(self._config_entry, new_options)
+            self.hass.config_entries.async_update_entry(
+                self._config_entry, options=new_options
+            )
 
             return self.async_create_entry(title="", data={})
 
@@ -187,7 +189,9 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
                 OPTION_LAST_CORRECTION_EXPORT: now_iso,
             }
 
-            await self.hass.config_entries.async_update_options(self._config_entry, new_options)
+            self.hass.config_entries.async_update_entry(
+                self._config_entry, options=new_options
+            )
 
             return self.async_create_entry(title="", data={})
 
