@@ -16,14 +16,14 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.enerabot.const import (
-    CONF_EXPORT_SENSOR,
-    CONF_IMPORT_SENSOR,
+    CONF_METER_ID,
     CONF_NAME,
+    CONF_OBIS_CODE,
+    CONF_SENSOR,
+    CONF_TARIFF_PRICE,
     DOMAIN,
-    OPTION_LAST_CORRECTION_EXPORT,
-    OPTION_LAST_CORRECTION_IMPORT,
-    OPTION_OFFSET_EXPORT,
-    OPTION_OFFSET_IMPORT,
+    OPTION_LAST_CORRECTION,
+    OPTION_OFFSET,
 )
 
 if sys.platform == "win32":
@@ -63,19 +63,19 @@ def mock_config_entry(hass: HomeAssistant):
     unique_id = str(uuid.uuid4())
     entry = MockConfigEntry(
         domain=DOMAIN,
-        title="Test Meter Pair",
+        title="Test Meter",
         data={
             CONF_NAME: "Test Meter",
-            CONF_IMPORT_SENSOR: "sensor.test_import",
-            CONF_EXPORT_SENSOR: "sensor.test_export",
+            CONF_SENSOR: "sensor.test_import",
+            CONF_OBIS_CODE: "1.8.2",
         },
         options={
-            OPTION_OFFSET_IMPORT: 0.0,
-            OPTION_OFFSET_EXPORT: 0.0,
-            OPTION_LAST_CORRECTION_IMPORT: "2026-08-01T12:00:00+00:00",
-            OPTION_LAST_CORRECTION_EXPORT: "2026-08-01T12:00:00+00:00",
+            OPTION_OFFSET: 0.5,
+            OPTION_LAST_CORRECTION: "2026-08-01T12:00:00+00:00",
+            CONF_METER_ID: "1SAG1234567890",
+            CONF_TARIFF_PRICE: 0.32,
         },
-        unique_id=f"sensor.test_import_sensor.test_export",
+        unique_id="sensor.test_import",
     )
     entry.add_to_hass(hass)
     return entry
@@ -87,10 +87,7 @@ async def setup_integration(hass: HomeAssistant, mock_config_entry):
     with (
         patch(
             "custom_components.enerabot.coordinator.EnerABotCoordinator._async_update_data",
-            return_value={
-                "import_value": 100.5,
-                "export_value": 50.2,
-            },
+            return_value=100.5,
         ),
     ):
         await hass.config_entries.async_setup(mock_config_entry.entry_id)

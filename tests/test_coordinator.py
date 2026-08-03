@@ -4,13 +4,12 @@
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import UpdateFailed
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.enerabot.const import (
-    CONF_EXPORT_SENSOR,
-    CONF_IMPORT_SENSOR,
     CONF_NAME,
+    CONF_OBIS_CODE,
+    CONF_SENSOR,
     DOMAIN,
 )
 from custom_components.enerabot.coordinator import EnerABotCoordinator
@@ -21,17 +20,16 @@ def mock_config_entry(hass):
     """Create a mock config entry."""
     entry = MockConfigEntry(
         domain=DOMAIN,
-        title="Test Meter Pair",
+        title="Test Meter",
         data={
             CONF_NAME: "Test Meter",
-            CONF_IMPORT_SENSOR: "sensor.test_import",
-            CONF_EXPORT_SENSOR: "sensor.test_export",
+            CONF_SENSOR: "sensor.test_import",
+            CONF_OBIS_CODE: "1.8.2",
         },
         options={
-            "offset_import": 1.5,
-            "offset_export": 0.5,
+            "offset": 1.5,
         },
-        unique_id="sensor.test_import_sensor.test_export",
+        unique_id="sensor.test_import",
     )
     entry.add_to_hass(hass)
     return entry
@@ -45,12 +43,13 @@ def mock_config_entry_export_only(hass):
         title="Test Export Only",
         data={
             CONF_NAME: "Test Export Only",
-            CONF_EXPORT_SENSOR: "sensor.test_export",
+            CONF_SENSOR: "sensor.test_export",
+            CONF_OBIS_CODE: "2.8.2",
         },
         options={
-            "offset_export": 0.5,
+            "offset": 0.5,
         },
-        unique_id="none_sensor.test_export",
+        unique_id="sensor.test_export",
     )
     entry.add_to_hass(hass)
     return entry
@@ -64,12 +63,13 @@ def mock_config_entry_import_only(hass):
         title="Test Import Only",
         data={
             CONF_NAME: "Test Import Only",
-            CONF_IMPORT_SENSOR: "sensor.test_import",
+            CONF_SENSOR: "sensor.test_import",
+            CONF_OBIS_CODE: "1.8.2",
         },
         options={
-            "offset_import": 1.5,
+            "offset": 1.5,
         },
-        unique_id="sensor.test_import_none",
+        unique_id="sensor.test_import_only",
     )
     entry.add_to_hass(hass)
     return entry
@@ -90,50 +90,42 @@ def mock_coordinator_export_only(hass, mock_config_entry_export_only):
 
 
 async def test_coordinator_update_data(hass: HomeAssistant, mock_coordinator):
-    """Test coordinator data update with offsets applied."""
+    """Test coordinator data update with offset applied."""
     hass.states.async_set("sensor.test_import", "100.0")
-    hass.states.async_set("sensor.test_export", "100.0")
 
     data = await mock_coordinator._async_update_data()
 
-    assert data["import_value"] == 101.5
-    assert data["export_value"] == 100.5
+    assert data == 101.5
 
 
 async def test_coordinator_update_data_no_offset(hass: HomeAssistant, mock_config_entry, mock_coordinator):
-    """Test coordinator data update without offsets."""
+    """Test coordinator data update without offset."""
     hass.config_entries.async_update_entry(mock_config_entry, options={})
     await hass.async_block_till_done()
 
     hass.states.async_set("sensor.test_import", "100.0")
-    hass.states.async_set("sensor.test_export", "100.0")
 
     data = await mock_coordinator._async_update_data()
 
-    assert data["import_value"] == 100.0
-    assert data["export_value"] == 100.0
+    assert data == 100.0
 
 
 async def test_coordinator_update_data_unavailable(hass: HomeAssistant, mock_coordinator):
     """Test coordinator handles unavailable sensor gracefully."""
     hass.states.async_set("sensor.test_import", "unavailable")
-    hass.states.async_set("sensor.test_export", "unavailable")
 
     data = await mock_coordinator._async_update_data()
 
-    assert data["import_value"] is None
-    assert data["export_value"] is None
+    assert data is None
 
 
 async def test_coordinator_update_data_unknown(hass: HomeAssistant, mock_coordinator):
     """Test coordinator handles unknown sensor gracefully."""
     hass.states.async_set("sensor.test_import", "unknown")
-    hass.states.async_set("sensor.test_export", "unknown")
 
     data = await mock_coordinator._async_update_data()
 
-    assert data["import_value"] is None
-    assert data["export_value"] is None
+    assert data is None
 
 
 async def test_coordinator_export_only(hass: HomeAssistant, mock_coordinator_export_only):
@@ -142,5 +134,4 @@ async def test_coordinator_export_only(hass: HomeAssistant, mock_coordinator_exp
 
     data = await mock_coordinator_export_only._async_update_data()
 
-    assert data["import_value"] is None
-    assert data["export_value"] == 100.5
+    assert data == 100.5

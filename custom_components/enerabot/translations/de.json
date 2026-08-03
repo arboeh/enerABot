@@ -3,19 +3,14 @@
     "step": {
       "user": {
         "title": "enerABot Einrichtung",
-        "description": "Wählen Sie mindestens einen Energiezähler-Sensor (Bezug und/oder Einspeisung). Optional können Sie den realen Zählerstand eingeben, um den Offset sofort zu kalibrieren.",
+        "description": "Wählen Sie einen Energiezähler-Sensor. Die Richtung (Bezug/Einspeisung) wird vom OBIS-Code abgeleitet (1.8.x = Bezug, 2.8.x = Einspeisung). Optional können Sie den realen Zählerstand eingeben, um den Offset sofort zu kalibrieren.",
         "data": {
-          "name": "Name des Zählerpaars",
-          "import_sensor": "Bezug-Sensor (1.8.0)",
-          "initial_import_meter_value": "Aktueller realer Zählerstand Bezug (kWh, optional)",
-          "export_sensor": "Einspeise-Sensor (2.8.0)",
-          "initial_export_meter_value": "Aktueller realer Zählerstand Einspeisung (kWh, optional)",
-          "meter_id_import": "Zähler-ID (Import)",
-          "meter_id_export": "Zähler-ID (Export)",
-          "obis_code_import": "OBIS-Code (Import, z.B. 1.8.2)",
-          "obis_code_export": "OBIS-Code (Export, z.B. 2.8.2)",
-          "tariff_price_import": "Tarifpreis Import (EUR/kWh)",
-          "tariff_price_export": "Tarifpreis Export (EUR/kWh)",
+          "name": "Name des Zählers",
+          "sensor": "Energiezähler-Sensor",
+          "obis_code": "OBIS-Code (z.B. 1.8.2 für Bezug, 2.8.2 für Einspeisung)",
+          "initial_meter_value": "Aktueller realer Zählerstand (kWh, optional)",
+          "meter_id": "Zähler-ID",
+          "tariff_price": "Tarifpreis (EUR/kWh)",
           "reading_cycle": "Ablesezyklus"
         }
       }
@@ -25,31 +20,14 @@
       "unknown": "Unerwarteter Fehler aufgetreten"
     },
     "abort": {
-      "already_configured": "Zählerpaar ist bereits konfiguriert"
+      "already_configured": "Zähler ist bereits konfiguriert"
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "enerABot Zählerkorrektur",
-        "menu_options": {
-          "import": "Bezugszähler korrigieren (1.8.0)",
-          "export": "Einspeisungszähler korrigieren (2.8.0)"
-        }
-      },
-      "import": {
-        "title": "Bezugszähler korrigieren",
-        "description": "Geben Sie den aktuellen realen Zählerstand Bezug (1.8.0) ein, um den Offset zu berechnen.",
-        "data": {
-          "meter_value": "Zählerstand Bezug (kWh)"
-        }
-      },
-      "export": {
-        "title": "Einspeisungszähler korrigieren",
-        "description": "Geben Sie den aktuellen realen Zählerstand Einspeisung (2.8.0) ein, um den Offset zu berechnen.",
-        "data": {
-          "meter_value": "Zählerstand Einspeisung (kWh)"
-        }
+        "description": "Geben Sie den aktuellen realen Zählerstand ein, um den Offset zu berechnen."
       }
     }
   },
@@ -63,31 +41,17 @@
     }
   },
   "services": {
-    "set_energy_meter_import": {
-      "name": "Bezugszählerstand setzen",
-      "description": "Setzt den Bezugszählerstand und berechnet den Offset.",
+    "set_energy_meter": {
+      "name": "Zählerstand setzen",
+      "description": "Setzt den Zählerstand und berechnet den Offset.",
       "fields": {
         "entity_id": {
-          "name": "Bezug-Sensor",
-          "description": "Die entity_id des Bezug-Sensors"
+          "name": "Energiezähler-Sensor",
+          "description": "Die entity_id des Energiezählers"
         },
         "meter_value": {
           "name": "Zählerstand",
-          "description": "Der aktuelle reale Zählerstand Bezug (1.8.0) in kWh"
-        }
-      }
-    },
-    "set_energy_meter_export": {
-      "name": "Einspeisungszählerstand setzen",
-      "description": "Setzt den Einspeisungszählerstand und berechnet den Offset.",
-      "fields": {
-        "entity_id": {
-          "name": "Einspeise-Sensor",
-          "description": "Die entity_id des Einspeise-Sensors"
-        },
-        "meter_value": {
-          "name": "Zählerstand",
-          "description": "Der aktuelle reale Zählerstand Einspeisung (2.8.0) in kWh"
+          "description": "Der aktuelle reelle Zählerstand in kWh"
         }
       }
     }

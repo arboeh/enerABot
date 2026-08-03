@@ -15,24 +15,20 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 
 from .const import (
-    CONF_EXPORT_SENSOR,
-    CONF_IMPORT_SENSOR,
-    CONF_METER_ID_EXPORT,
-    CONF_METER_ID_IMPORT,
+    CONF_METER_ID,
     CONF_NAME,
-    CONF_OBIS_CODE_EXPORT,
-    CONF_OBIS_CODE_IMPORT,
+    CONF_OBIS_CODE,
     CONF_READING_CYCLE,
-    CONF_TARIFF_PRICE_EXPORT,
-    CONF_TARIFF_PRICE_IMPORT,
+    CONF_SENSOR,
+    CONF_TARIFF_PRICE,
     DOMAIN,
     OBIS_CODE_OPTIONS,
-    OPTION_LAST_CORRECTION_EXPORT,
-    OPTION_LAST_CORRECTION_IMPORT,
-    OPTION_OFFSET_EXPORT,
-    OPTION_OFFSET_IMPORT,
+    OPTION_LAST_CORRECTION,
+    OPTION_OFFSET,
     READING_CYCLE_MANUAL,
     READING_CYCLE_OPTIONS,
+    is_export_obis,
+    is_import_obis,
 )
 from .options_flow import EnerABotOptionsFlow
 
@@ -41,10 +37,17 @@ _LOGGER = logging.getLogger(__name__)
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): str,
-        vol.Optional(CONF_IMPORT_SENSOR): selector.EntitySelector(
+        vol.Required(CONF_SENSOR): selector.EntitySelector(
             selector.EntitySelectorConfig(domain="sensor", multiple=False)
         ),
-        vol.Optional("initial_import_meter_value"): selector.NumberSelector(
+        vol.Required(CONF_OBIS_CODE): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=OBIS_CODE_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+                custom_value=True,
+            )
+        ),
+        vol.Optional("initial_meter_value"): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0,
                 max=999999,
@@ -53,44 +56,8 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
                 mode=selector.NumberSelectorMode.BOX,
             )
         ),
-        vol.Optional(CONF_METER_ID_IMPORT): str,
-        vol.Optional(CONF_OBIS_CODE_IMPORT): selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=OBIS_CODE_OPTIONS,
-                mode=selector.SelectSelectorMode.DROPDOWN,
-                custom_value=True,
-            )
-        ),
-        vol.Optional(CONF_TARIFF_PRICE_IMPORT): selector.NumberSelector(
-            selector.NumberSelectorConfig(
-                min=0,
-                max=9999,
-                step=0.001,
-                unit_of_measurement="EUR/kWh",
-                mode=selector.NumberSelectorMode.BOX,
-            )
-        ),
-        vol.Optional(CONF_EXPORT_SENSOR): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor", multiple=False)
-        ),
-        vol.Optional("initial_export_meter_value"): selector.NumberSelector(
-            selector.NumberSelectorConfig(
-                min=0,
-                max=999999,
-                step=1,
-                unit_of_measurement="kWh",
-                mode=selector.NumberSelectorMode.BOX,
-            )
-        ),
-        vol.Optional(CONF_METER_ID_EXPORT): str,
-        vol.Optional(CONF_OBIS_CODE_EXPORT): selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=OBIS_CODE_OPTIONS,
-                mode=selector.SelectSelectorMode.DROPDOWN,
-                custom_value=True,
-            )
-        ),
-        vol.Optional(CONF_TARIFF_PRICE_EXPORT): selector.NumberSelector(
+        vol.Optional(CONF_METER_ID): str,
+        vol.Optional(CONF_TARIFF_PRICE): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0,
                 max=9999,
@@ -116,36 +83,33 @@ class CannotConnect(Exception):
 
 async def validate_input(hass, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to proceed."""
-    import_sensor = data.get(CONF_IMPORT_SENSOR)
-    export_sensor = data.get(CONF_EXPORT_SENSOR)
+    sensor = data[CONF_SENSOR]
+    obis_code = data[CONF_OBIS_CODE]
 
-    if not import_sensor and not export_sensor:
-        raise CannotConnect("At least one of import or export sensor is required")
+    if not (is_import_obis(obis_code) or is_export_obis(obis_code)):
+        raise CannotConnect(f"OBIS code {obis_code} is neither import (1.8.x) nor export (2.8.x)")
 
-    for entity_id in (import_sensor, export_sensor):
-        if entity_id is None:
-            continue
-        state = hass.states.get(entity_id)
-        if state is None:
-            raise CannotConnect(f"Entity {entity_id} not found")
-        if state.state in ("unknown", "unavailable"):
-            raise CannotConnect(f"Entity {entity_id} state is {state.state}")
-        try:
-            float(state.state)
-        except (ValueError, TypeError):
-            raise CannotConnect(f"Entity {entity_id} has non-numeric state") from None
+    state = hass.states.get(sensor)
+    if state is None:
+        raise CannotConnect(f"Entity {sensor} not found")
+    if state.state in ("unknown", "unavailable"):
+        raise CannotConnect(f"Entity {sensor} state is {state.state}")
+    try:
+        float(state.state)
+    except (ValueError, TypeError) as err:
+        raise CannotConnect(f"Entity {sensor} has non-numeric state") from err
 
     return {
         "title": data[CONF_NAME],
-        "import_sensor": import_sensor,
-        "export_sensor": export_sensor,
+        "sensor": sensor,
+        "obis_code": obis_code,
     }
 
 
 class EnerABotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for enerABot."""
 
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle the initial step."""
@@ -161,32 +125,25 @@ class EnerABotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
-                unique_id = f"{info.get('import_sensor') or 'none'}_{info.get('export_sensor') or 'none'}"
-                await self.async_set_unique_id(unique_id)
+                await self.async_set_unique_id(info["sensor"])
                 self._abort_if_unique_id_configured()
 
                 options: dict[str, Any] = {}
                 now_iso = datetime.now(UTC).isoformat()
 
-                if info["import_sensor"] and user_input.get("initial_import_meter_value") is not None:
-                    current_state = self.hass.states.get(info["import_sensor"])
-                    if current_state and current_state.state not in ("unknown", "unavailable"):
-                        try:
-                            current = float(current_state.state)
-                            options[OPTION_OFFSET_IMPORT] = round(user_input["initial_import_meter_value"] - current, 3)
-                            options[OPTION_LAST_CORRECTION_IMPORT] = now_iso
-                        except (ValueError, TypeError):
-                            pass
-
-                if info["export_sensor"] and user_input.get("initial_export_meter_value") is not None:
-                    current_state = self.hass.states.get(info["export_sensor"])
-                    if current_state and current_state.state not in ("unknown", "unavailable"):
-                        try:
-                            current = float(current_state.state)
-                            options[OPTION_OFFSET_EXPORT] = round(user_input["initial_export_meter_value"] - current, 3)
-                            options[OPTION_LAST_CORRECTION_EXPORT] = now_iso
-                        except (ValueError, TypeError):
-                            pass
+                sensor_entity_id = info["sensor"]
+                current_state = self.hass.states.get(sensor_entity_id)
+                if (
+                    current_state
+                    and current_state.state not in ("unknown", "unavailable")
+                    and user_input.get("initial_meter_value") is not None
+                ):
+                    try:
+                        current = float(current_state.state)
+                        options[OPTION_OFFSET] = round(user_input["initial_meter_value"] - current, 3)
+                        options[OPTION_LAST_CORRECTION] = now_iso
+                    except (ValueError, TypeError):
+                        pass
 
                 return self.async_create_entry(
                     title=info["title"],

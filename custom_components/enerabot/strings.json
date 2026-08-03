@@ -3,19 +3,14 @@
     "step": {
       "user": {
         "title": "enerABot Setup",
-        "description": "Select at least one energy meter sensor (import and/or export). Optionally enter the real meter reading to calibrate the offset immediately.",
+        "description": "Select an energy meter sensor. The direction (import/export) is derived from the OBIS code (1.8.x = import, 2.8.x = export). Optionally enter the real meter reading to calibrate the offset immediately.",
         "data": {
-          "name": "Meter Pair Name",
-          "import_sensor": "Import Sensor (1.8.0)",
-          "initial_import_meter_value": "Initial Import Reading (kWh, optional)",
-          "export_sensor": "Export Sensor (2.8.0)",
-          "initial_export_meter_value": "Initial Export Reading (kWh, optional)",
-          "meter_id_import": "Meter ID (Import)",
-          "meter_id_export": "Meter ID (Export)",
-          "obis_code_import": "OBIS Code (Import, e.g. 1.8.2)",
-          "obis_code_export": "OBIS Code (Export, e.g. 2.8.2)",
-          "tariff_price_import": "Import Tariff Price (EUR/kWh)",
-          "tariff_price_export": "Export Tariff Price (EUR/kWh)",
+          "name": "Meter Name",
+          "sensor": "Energy Meter Sensor",
+          "obis_code": "OBIS Code (e.g. 1.8.2 for import, 2.8.2 for export)",
+          "initial_meter_value": "Initial Meter Reading (kWh, optional)",
+          "meter_id": "Meter ID",
+          "tariff_price": "Tariff Price (EUR/kWh)",
           "reading_cycle": "Reading Cycle"
         }
       }
@@ -25,31 +20,14 @@
       "unknown": "Unexpected error occurred"
     },
     "abort": {
-      "already_configured": "Meter pair is already configured"
+      "already_configured": "Meter is already configured"
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "enerABot Meter Correction",
-        "menu_options": {
-          "import": "Correct Import Meter (1.8.0)",
-          "export": "Correct Export Meter (2.8.0)"
-        }
-      },
-      "import": {
-        "title": "Correct Import Meter",
-        "description": "Enter the current real Zählerstand Bezug (1.8.0) to calculate the offset.",
-        "data": {
-          "meter_value": "Zählerstand Bezug (kWh)"
-        }
-      },
-      "export": {
-        "title": "Correct Export Meter",
-        "description": "Enter the current real Zählerstand Einspeisung (2.8.0) to calculate the offset.",
-        "data": {
-          "meter_value": "Zählerstand Einspeisung (kWh)"
-        }
+        "description": "Enter the current real Zählerstand to calculate the offset."
       }
     }
   },
@@ -63,31 +41,17 @@
     }
   },
   "services": {
-    "set_energy_meter_import": {
-      "name": "Set energy meter import",
-      "description": "Set the import energy meter value and calculate the offset.",
+    "set_energy_meter": {
+      "name": "Set energy meter",
+      "description": "Set the energy meter value and calculate the offset.",
       "fields": {
         "entity_id": {
-          "name": "Import Sensor",
-          "description": "The import energy sensor entity_id"
+          "name": "Energy Sensor",
+          "description": "The energy sensor entity_id"
         },
         "meter_value": {
           "name": "Meter Value",
-          "description": "The current real Zählerstand Bezug (1.8.0) in kWh"
-        }
-      }
-    },
-    "set_energy_meter_export": {
-      "name": "Set energy meter export",
-      "description": "Set the export energy meter value and calculate the offset.",
-      "fields": {
-        "entity_id": {
-          "name": "Export Sensor",
-          "description": "The export energy sensor entity_id"
-        },
-        "meter_value": {
-          "name": "Meter Value",
-          "description": "The current real Zählerstand Einspeisung (2.8.0) in kWh"
+          "description": "The current real Zählerstand in kWh"
         }
       }
     }
