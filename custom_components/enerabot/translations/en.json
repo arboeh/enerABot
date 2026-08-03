@@ -1,0 +1,77 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "enerABot Setup",
+        "description": "Select the energy meter sensors for import and export, and give the meter pair a name.",
+        "data": {
+          "name": "Meter Pair Name",
+          "import_sensor": "Import Sensor (1.8.0)",
+          "export_sensor": "Export Sensor (2.8.0)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to read sensor values",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "Meter pair is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "enerABot Meter Correction",
+        "menu_options": {
+          "import": "Correct Import Meter (1.8.0)",
+          "export": "Correct Export Meter (2.8.0)"
+        }
+      },
+      "import": {
+        "title": "Correct Import Meter",
+        "description": "Enter the current real meter reading Import (1.8.0) to calculate the offset.",
+        "data": {
+          "meter_value": "Meter Reading Import (kWh)"
+        }
+      },
+      "export": {
+        "title": "Correct Export Meter",
+        "description": "Enter the current real meter reading Export (2.8.0) to calculate the offset.",
+        "data": {
+          "meter_value": "Meter Reading Export (kWh)"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_energy_meter_import": {
+      "name": "Set energy meter import",
+      "description": "Set the import energy meter value and calculate the offset.",
+      "fields": {
+        "entity_id": {
+          "name": "Import Sensor",
+          "description": "The import energy sensor entity_id"
+        },
+        "meter_value": {
+          "name": "Meter Value",
+          "description": "The current real meter reading Import (1.8.0) in kWh"
+        }
+      }
+    },
+    "set_energy_meter_export": {
+      "name": "Set energy meter export",
+      "description": "Set the export energy meter value and calculate the offset.",
+      "fields": {
+        "entity_id": {
+          "name": "Export Sensor",
+          "description": "The export energy sensor entity_id"
+        },
+        "meter_value": {
+          "name": "Meter Value",
+          "description": "The current real meter reading Export (2.8.0) in kWh"
+        }
+      }
+    }
+  }
+}

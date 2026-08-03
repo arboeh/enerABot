@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install project + deps
+        run: uv sync --all-extras
+
+      - name: Lint with ruff
+        run: |
+          uv run ruff check custom_components/enerabot tests/
+          uv run ruff check --output-format=github .
+
+      - name: Format check with ruff
+        run: uv run ruff format --check custom_components/enerabot tests/
+
+      - name: Run tests with uv
+        run: |
+          uv run pytest tests/ -v \
+            --cov=custom_components/enerabot \
+            --cov-report=xml \
+            --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Integration
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Hassfest Validation
+        uses: home-assistant/actions/hassfest@master
