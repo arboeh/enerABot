@@ -3,11 +3,13 @@
     "step": {
       "user": {
         "title": "enerABot Einrichtung",
-        "description": "Wählen Sie die Energiezähler-Sensoren für Bezug und Einspeisung und geben Sie dem Zählerpaar einen Namen.",
+        "description": "Wählen Sie mindestens einen Energiezähler-Sensor (Bezug und/oder Einspeisung). Optional können Sie den realen Zählerstand eingeben, um den Offset sofort zu kalibrieren.",
         "data": {
           "name": "Name des Zählerpaars",
           "import_sensor": "Bezug-Sensor (1.8.0)",
-          "export_sensor": "Einspeise-Sensor (2.8.0)"
+          "initial_import_meter_value": "Aktueller realer Zählerstand Bezug (kWh, optional)",
+          "export_sensor": "Einspeise-Sensor (2.8.0)",
+          "initial_export_meter_value": "Aktueller realer Zählerstand Einspeisung (kWh, optional)"
         }
       }
     },

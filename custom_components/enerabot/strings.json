@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "enerABot Setup",
-        "description": "Select the energy meter sensors for import and export, and give the meter pair a name.",
+        "description": "Select at least one energy meter sensor (import and/or export). Optionally enter the real meter reading to calibrate the offset immediately.",
         "data": {
           "name": "Meter Pair Name",
           "import_sensor": "Import Sensor (1.8.0)",

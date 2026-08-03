@@ -15,6 +15,8 @@ from custom_components.enerabot.const import (
     CONF_IMPORT_SENSOR,
     CONF_NAME,
     DOMAIN,
+    OPTION_LAST_CORRECTION_IMPORT,
+    OPTION_OFFSET_IMPORT,
 )
 
 
@@ -154,3 +156,42 @@ async def test_form_with_initial_import_meter_value_sets_offset(hass: HomeAssist
     options = result2["options"]
     assert options["offset_import"] == 50.0
     assert "last_correction_import" in options
+
+
+async def test_form_without_initial_meter_value_no_offset(hass: HomeAssistant) -> None:
+    """Test that no offset is set when initial meter value is not provided."""
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test No Initial",
+            "import_sensor": "sensor.test_import",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    options = result2["options"]
+    assert OPTION_OFFSET_IMPORT not in options
+    assert OPTION_LAST_CORRECTION_IMPORT not in options
+
+
+async def test_form_initial_meter_value_ignored_when_sensor_unavailable(hass: HomeAssistant) -> None:
+    """Test that initial meter value is rejected when sensor is unavailable."""
+    hass.states.async_set("sensor.test_import", "unavailable")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Unavailable",
+            "import_sensor": "sensor.test_import",
+            "initial_import_meter_value": 150.0,
+        },
+    )
+
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["errors"]["base"] == "cannot_connect"
