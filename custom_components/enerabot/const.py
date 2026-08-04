@@ -6,7 +6,7 @@ from __future__ import annotations
 
 DOMAIN = "enerabot"
 
-PLATFORMS = ["sensor", "button"]
+PLATFORMS = ["sensor", "button", "number", "select"]
 
 CONF_NAME = "name"
 CONF_SENSOR = "sensor"

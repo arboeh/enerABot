@@ -12,9 +12,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/arboeh/enerABot/blob/main/LICENSE)
 [![maintained](https://img.shields.io/maintenance/yes/2026)](https://github.com/arboeh/enerABot/graphs/commit-activity)
 
-> **⚠️ Beta-Release** - enerABot 0.3.0-beta ist funktionsfähig, wird aber aktiv weiterentwickelt.
-> Breaking Changes vor 1.0.0 sind möglich. Bitte Probleme auf GitHub melden.
-
 **enerABot** bringt deinen physischen Zählerstand elektronisch in Home
 Assistant - kein manuelles Ablesen mehr nötig. Die App nutzt einen
 bestehenden totalen (kumulativen) Netzsensor und gleicht ihn einmalig über
@@ -107,6 +104,8 @@ Jeder enerABot-Eintrag kann optional zusätzlich zur Energie auch Kosten erfasse
 5. Der Eintrag wird validiert und automatisch hinzugefügt
 6. Den Vorgang ein zweites Mal wiederholen, falls du auch die jeweils andere Richtung (Bezug oder Einspeisung) erfassen möchtest
 
+- **Preis-Sensor**: Nur erforderlich, wenn Preis-Modus auf "Dynamischer Preis" gesetzt ist. Wähle eine beliebige Sensor-Entity, die den aktuellen Preis pro kWh liefert (z. B. aus einer Tibber-, Nord-Pool- oder Awattar-Integration, oder eines eigenen Template-Sensors).
+
 > Alle Metadatenfelder (Zähler-ID, Tarifpreis, Ablesezyklus) sind optional und können später über die **Optionen** ergänzt oder geändert werden.
 
 ## Verwendung
@@ -126,6 +125,10 @@ Für jeden konfigurierten Zähler erstellt enerABot folgende Entitäten:
 | `sensor.<name>`                       | Sensor | Energiewert mit angewendetem Offset; benannt "Import" oder "Export" je nach OBIS-Code |
 | `sensor.<name>_cost` (optional)       | Sensor | Akkumulierte Kosten, nur falls eine Preisquelle konfiguriert ist |
 | `button.<name>_reset`                 | Button | Setzt Offset, Kosten und Korrekturverlauf für diesen Zähler zurück |
+| `number.<name>_tariff_price`      | Number | Editierbarer Tarifpreis (EUR/kWh), erscheint als Konfigurations-Entität auf der Geräteseite |
+| `number.<name>_offset`            | Number (standardmäßig deaktiviert) | Editierbarer Offset, erscheint als Konfigurations-Entität auf der Geräteseite |
+| `select.<name>_price_mode`        | Select | Editierbarer Preis-Modus (keine / fest / dynamisch), erscheint als Konfigurations-Entität |
+| `select.<name>_cost_reset_cycle`  | Select | Editierbarer Kosten-Reset-Zyklus (nie / monatlich / jährlich), erscheint als Konfigurations-Entität |
 
 ## Kosten-Entität (optional)
 
@@ -181,7 +184,7 @@ data:
 
 Alternativ kannst du die **Reset**-Button-Entität jedes Zählers nutzen, um denselben Vorgang direkt über die UI auszulösen, ohne die Entwicklerwerkzeuge zu öffnen.
 
-## Bekannte Einschränkungen (0.3.0-beta)
+## Bekannte Einschränkungen (0.3.0)
 
 - Jeder Eintrag erfasst genau ein Zählerregister - Bezug und Einspeisung erfordern zwei separate Einträge
 - Keine Offset-Historie; nur der aktuellste Offset und Korrekturzeitpunkt werden gespeichert

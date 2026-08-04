@@ -12,6 +12,7 @@
           "meter_id": "Zähler-ID",
           "tariff_price": "Tarifpreis (EUR/kWh)",
           "price_mode": "Preis-Modus",
+          "price_sensor": "Preis-Sensor",
           "cost_reset_cycle": "Kosten-Reset-Zyklus",
           "reading_cycle": "Ablesezyklus"
         }
@@ -104,6 +105,28 @@
     "button": {
       "reset": {
         "name": "Zurücksetzen"
+      }
+    },
+    "number": {
+      "tariff_price": { "name": "Tarifpreis" },
+      "offset": { "name": "Offset" }
+    },
+    "select": {
+      "price_mode": {
+        "name": "Preis-Modus",
+        "state": {
+          "none": "Keine Preisberechnung",
+          "fixed": "Fester Preis",
+          "dynamic": "Dynamischer Preis"
+        }
+      },
+      "cost_reset_cycle": {
+        "name": "Kosten-Reset-Zyklus",
+        "state": {
+          "none": "Nie (laufender Gesamtwert)",
+          "monthly": "Monatlich",
+          "yearly": "Jährlich"
+        }
       }
     }
   }

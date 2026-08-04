@@ -12,6 +12,7 @@
           "meter_id": "Meter ID",
           "tariff_price": "Tariff Price (EUR/kWh)",
           "price_mode": "Price Mode",
+          "price_sensor": "Price Sensor",
           "cost_reset_cycle": "Cost Reset Cycle",
           "reading_cycle": "Reading Cycle"
         }
@@ -104,6 +105,28 @@
     "button": {
       "reset": {
         "name": "Reset"
+      }
+    },
+    "number": {
+      "tariff_price": { "name": "Tariff Price" },
+      "offset": { "name": "Offset" }
+    },
+    "select": {
+      "price_mode": {
+        "name": "Price Mode",
+        "state": {
+          "none": "No price tracking",
+          "fixed": "Fixed price",
+          "dynamic": "Dynamic price"
+        }
+      },
+      "cost_reset_cycle": {
+        "name": "Cost Reset Cycle",
+        "state": {
+          "none": "Never (running total)",
+          "monthly": "Monthly",
+          "yearly": "Yearly"
+        }
       }
     }
   }

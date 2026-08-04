@@ -12,9 +12,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/arboeh/enerABot/blob/main/LICENSE)
 [![maintained](https://img.shields.io/maintenance/yes/2026)](https://github.com/arboeh/enerABot/graphs/commit-activity)
 
-> **⚠️ Beta Release** - enerABot 0.3.0-beta is functional but under active development.
-> Expect breaking changes before 1.0.0. Please report issues on GitHub.
-
 **enerABot** brings your physical energy meter reading into Home Assistant
 electronically - no more manual meter reading. It takes an existing total
 (cumulative) grid sensor and lets you align it to the real meter reading
@@ -107,6 +104,8 @@ Each enerABot entry can optionally track cost alongside energy:
 5. The entry is validated and added automatically
 6. Repeat the process a second time if you also want to track the opposite direction (import or export)
 
+- **Price Sensor**: Only required when Price Mode is set to "Dynamic price". Select any sensor entity that provides the current price per kWh (e.g. from a Tibber, Nord Pool or Awattar integration, or a custom template sensor).
+
 > All metadata fields (meter ID, tariff price, reading cycle) are optional and can be added or edited later via **Options**.
 
 ## Usage
@@ -126,6 +125,10 @@ For each configured meter, enerABot creates the following entities:
 | `sensor.<name>`                   | Sensor | Energy value with offset applied; named "Import" or "Export" based on the OBIS code |
 | `sensor.<name>_cost` (optional)   | Sensor | Accumulated cost, only if a price source is configured |
 | `button.<name>_reset`             | Button | Resets offset, cost, and correction history for this meter |
+| `number.<name>_tariff_price`      | Number | Editable tariff price (EUR/kWh), shown as a configuration entity on the device page |
+| `number.<name>_offset`            | Number (disabled by default) | Editable offset, shown as a configuration entity on the device page |
+| `select.<name>_price_mode`        | Select | Editable price mode (none / fixed / dynamic), shown as a configuration entity |
+| `select.<name>_cost_reset_cycle`  | Select | Editable cost reset cycle (none / monthly / yearly), shown as a configuration entity |
 
 ## Cost Entity (optional)
 
@@ -181,7 +184,7 @@ data:
 
 Alternatively, use the **Reset** button entity created for each meter to trigger the same action from the UI, without needing Developer Tools.
 
-## Known Limitations (0.3.0-beta)
+## Known Limitations (0.3.0)
 
 - Each entry tracks exactly one meter register - import and export require two separate entries
 - No historical offset log; only the most recent offset and correction timestamp are stored

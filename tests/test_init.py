@@ -101,31 +101,38 @@ async def test_async_unload_entry(hass: HomeAssistant, mock_config_entry) -> Non
 
 
 async def test_async_reload_entry(hass: HomeAssistant, mock_config_entry) -> None:
-    """Test that async_reload_entry unloads and sets up the entry again."""
-    with patch(
-        "custom_components.enerabot.coordinator.EnerABotCoordinator._async_update_data",
-        return_value=100.5,
-    ):
-        await hass.config_entries.async_setup(mock_config_entry.entry_id)
-        await hass.async_block_till_done()
-
-    assert mock_config_entry.entry_id in hass.data[DOMAIN]
-
-    with (
-        patch.object(hass.config_entries, "async_unload_platforms", new=AsyncMock(return_value=True)),
-        patch.object(hass.config_entries, "async_forward_entry_setups", new=AsyncMock()),
-        patch(
-            "custom_components.enerabot.coordinator.EnerABotCoordinator.async_config_entry_first_refresh",
-            new=AsyncMock(),
-        ),
-        patch(
-            "custom_components.enerabot.coordinator.EnerABotCoordinator.async_start_state_listener",
-            new=AsyncMock(),
-        ),
-    ):
+    """Test that reload is delegated to Home Assistant."""
+    with patch.object(
+        hass.config_entries,
+        "async_reload",
+        new=AsyncMock(),
+    ) as mock_reload:
         await async_reload_entry(hass, mock_config_entry)
 
-    assert mock_config_entry.entry_id in hass.data[DOMAIN]
+    mock_reload.assert_awaited_once_with(mock_config_entry.entry_id)
+
+
+async def test_config_entry_update_triggers_home_assistant_reload(
+    hass: HomeAssistant,
+    mock_config_entry,
+) -> None:
+    """Test config-entry updates trigger the HA-managed reload path."""
+    with patch.object(
+        hass.config_entries,
+        "async_reload",
+        new=AsyncMock(),
+    ) as mock_reload:
+        remove_listener = mock_config_entry.add_update_listener(async_reload_entry)
+        try:
+            hass.config_entries.async_update_entry(
+                mock_config_entry,
+                options={**mock_config_entry.options, "offset": 1.0},
+            )
+            await hass.async_block_till_done()
+        finally:
+            remove_listener()
+
+    mock_reload.assert_awaited_once_with(mock_config_entry.entry_id)
 
 
 async def test_migrate_entry_dual_sensor_splits_into_two(hass: HomeAssistant) -> None:
