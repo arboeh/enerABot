@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "enerabot"
-version = "0.1.0"
+version = "0.3.0"
 description = "Energy Meter Manager for Home Assistant"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"

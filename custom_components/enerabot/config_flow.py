@@ -19,16 +19,25 @@ except ImportError:  # pragma: no cover - older HA versions
     from homeassistant.data_entry_flow import FlowResult as ConfigFlowResult
 
 from .const import (
+    CONF_COST_RESET_CYCLE,
     CONF_METER_ID,
     CONF_NAME,
     CONF_OBIS_CODE,
+    CONF_PRICE_MODE,
+    CONF_PRICE_SENSOR,
     CONF_READING_CYCLE,
     CONF_SENSOR,
     CONF_TARIFF_PRICE,
+    COST_RESET_NONE,
+    COST_RESET_OPTIONS,
     DOMAIN,
     OBIS_CODE_OPTIONS,
     OPTION_LAST_CORRECTION,
     OPTION_OFFSET,
+    PRICE_MODE_DYNAMIC,
+    PRICE_MODE_FIXED,
+    PRICE_MODE_NONE,
+    PRICE_MODE_OPTIONS,
     READING_CYCLE_MANUAL,
     READING_CYCLE_OPTIONS,
     is_export_obis,
@@ -70,6 +79,23 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
                 mode=selector.NumberSelectorMode.BOX,
             )
         ),
+        vol.Optional(CONF_PRICE_MODE, default=PRICE_MODE_NONE): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=PRICE_MODE_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+                translation_key="price_mode",
+            )
+        ),
+        vol.Optional(CONF_PRICE_SENSOR): selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor", multiple=False)
+        ),
+        vol.Optional(CONF_COST_RESET_CYCLE, default=COST_RESET_NONE): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=COST_RESET_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+                translation_key="cost_reset_cycle",
+            )
+        ),
         vol.Optional(CONF_READING_CYCLE, default=READING_CYCLE_MANUAL): selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=READING_CYCLE_OPTIONS,
@@ -102,6 +128,21 @@ async def validate_input(hass, data: dict[str, Any]) -> dict[str, Any]:
         float(state.state)
     except (ValueError, TypeError) as err:
         raise CannotConnect(f"Entity {sensor} has non-numeric state") from err
+
+    price_mode = data.get(CONF_PRICE_MODE, PRICE_MODE_NONE)
+    if price_mode == PRICE_MODE_DYNAMIC:
+        price_sensor = data.get(CONF_PRICE_SENSOR)
+        if not price_sensor:
+            raise CannotConnect("Dynamic price mode requires a price sensor")
+        price_state = hass.states.get(price_sensor)
+        if price_state is None or price_state.state in ("unknown", "unavailable"):
+            raise CannotConnect(f"Price sensor {price_sensor} is not available")
+        try:
+            float(price_state.state)
+        except (ValueError, TypeError) as err:
+            raise CannotConnect(f"Price sensor {price_sensor} has non-numeric state") from err
+    elif price_mode == PRICE_MODE_FIXED and data.get(CONF_TARIFF_PRICE) is None:
+        raise CannotConnect("Fixed price mode requires a tariff_price value")
 
     return {
         "title": data[CONF_NAME],
@@ -148,6 +189,14 @@ class EnerABotConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         options[OPTION_LAST_CORRECTION] = now_iso
                     except (ValueError, TypeError):
                         pass
+
+                price_mode = user_input.get(CONF_PRICE_MODE, PRICE_MODE_NONE)
+                options[CONF_PRICE_MODE] = price_mode
+                if price_mode == PRICE_MODE_FIXED:
+                    options[CONF_TARIFF_PRICE] = user_input.get(CONF_TARIFF_PRICE)
+                if price_mode == PRICE_MODE_DYNAMIC:
+                    options[CONF_PRICE_SENSOR] = user_input.get(CONF_PRICE_SENSOR)
+                options[CONF_COST_RESET_CYCLE] = user_input.get(CONF_COST_RESET_CYCLE, COST_RESET_NONE)
 
                 return self.async_create_entry(
                     title=info["title"],

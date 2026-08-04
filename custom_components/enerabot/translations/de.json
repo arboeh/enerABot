@@ -11,6 +11,8 @@
           "initial_meter_value": "Aktueller realer Zählerstand (kWh, optional)",
           "meter_id": "Zähler-ID",
           "tariff_price": "Tarifpreis (EUR/kWh)",
+          "price_mode": "Preis-Modus",
+          "cost_reset_cycle": "Kosten-Reset-Zyklus",
           "reading_cycle": "Ablesezyklus"
         }
       }
@@ -27,7 +29,16 @@
     "step": {
       "init": {
         "title": "enerABot Zählerkorrektur",
-        "description": "Geben Sie den aktuellen realen Zählerstand ein, um den Offset zu berechnen."
+        "description": "Geben Sie den aktuellen realen Zählerstand ein, um den Offset zu berechnen.",
+        "data": {
+          "meter_value": "Aktueller Zählerstand",
+          "meter_id": "Zähler-ID",
+          "obis_code": "OBIS-Code",
+          "tariff_price": "Tarifpreis (EUR/kWh)",
+          "price_mode": "Preis-Modus",
+          "price_sensor": "Preis-Sensor",
+          "cost_reset_cycle": "Kosten-Reset-Zyklus"
+        }
       }
     }
   },
@@ -37,6 +48,20 @@
         "daily": "Täglich",
         "monthly": "Monatlich",
         "manual": "Manuell"
+      }
+    },
+    "price_mode": {
+      "options": {
+        "none": "Keine Preisberechnung",
+        "fixed": "Fester Preis",
+        "dynamic": "Dynamischer Preis"
+      }
+    },
+    "cost_reset_cycle": {
+      "options": {
+        "none": "Nie (laufender Gesamtwert)",
+        "monthly": "Monatlich",
+        "yearly": "Jährlich"
       }
     }
   },
@@ -53,6 +78,32 @@
           "name": "Zählerstand",
           "description": "Der aktuelle reelle Zählerstand in kWh"
         }
+      }
+    },
+    "reset_meter": {
+      "name": "Zähler zurücksetzen",
+      "description": "Setzt den gespeicherten Offset, Kosten-Akkumulator und Korrekturverlauf für einen Zähler zurück.",
+      "fields": {
+        "entity_id": {
+          "name": "Energiezähler-Sensor",
+          "description": "Die entity_id des zurückzusetzenden Energiezählers"
+        },
+        "reset_all": {
+          "name": "Alle Zähler zurücksetzen",
+          "description": "Wenn aktiviert, werden alle konfigurierten enerABot-Zähler zurückgesetzt statt nur einem"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost": {
+        "name": "Kosten"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Zurücksetzen"
       }
     }
   }

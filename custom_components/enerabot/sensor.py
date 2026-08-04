@@ -34,7 +34,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up enerABot sensor."""
     coordinator: EnerABotCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([EnerABotSensor(coordinator, entry)])
+    entities: list[EnerABotSensor | EnerABotCostSensor] = [EnerABotSensor(coordinator, entry)]
+    if entry.options.get(CONF_TARIFF_PRICE):
+        entities.append(EnerABotCostSensor(coordinator, entry))
+    async_add_entities(entities)
 
 
 class EnerABotSensor(CoordinatorEntity[EnerABotCoordinator], SensorEntity):  # type: ignore[reportIncompatibleVariableOverride]
@@ -85,3 +88,34 @@ class EnerABotSensor(CoordinatorEntity[EnerABotCoordinator], SensorEntity):  # t
         if tariff_price:
             attrs["tariff_price"] = tariff_price
         return attrs
+
+
+class EnerABotCostSensor(CoordinatorEntity[EnerABotCoordinator], SensorEntity):
+    """Sensor for accumulated cost based on tariff_price."""
+
+    def __init__(self, coordinator: EnerABotCoordinator, entry: ConfigEntry) -> None:
+        """Initialize the cost sensor."""
+        super().__init__(coordinator)
+        self.entry = entry
+        self._attr_unique_id = f"{entry.entry_id}_cost"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = "cost"
+        self._attr_device_class = SensorDeviceClass.MONETARY
+        self._attr_state_class = SensorStateClass.TOTAL
+        self._attr_native_unit_of_measurement = "EUR"
+        meter_name = entry.data.get(CONF_NAME, entry.title)
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry.entry_id)},
+            "name": meter_name,
+            "manufacturer": "enerABot",
+        }
+
+    @property
+    def native_value(self) -> float | None:  # type: ignore[reportIncompatibleVariableOverride]
+        """Return accumulated cost for the current period."""
+        return self.coordinator.cost_total
+
+    @property
+    def available(self) -> bool:  # type: ignore[reportIncompatibleVariableOverride]
+        """Return True if tariff price is configured."""
+        return bool(self.entry.options.get(CONF_TARIFF_PRICE))

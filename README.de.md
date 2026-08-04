@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/arboeh/enerABot/blob/main/LICENSE)
 [![maintained](https://img.shields.io/maintenance/yes/2026)](https://github.com/arboeh/enerABot/graphs/commit-activity)
 
-> **⚠️ Beta-Release** - enerABot 0.2.0-beta ist funktionsfähig, wird aber aktiv weiterentwickelt.
+> **⚠️ Beta-Release** - enerABot 0.3.0-beta ist funktionsfähig, wird aber aktiv weiterentwickelt.
 > Breaking Changes vor 1.0.0 sind möglich. Bitte Probleme auf GitHub melden.
 
 **enerABot** bringt deinen physischen Zählerstand elektronisch in Home
@@ -34,8 +34,12 @@ zweimal hinzu - einmal je Richtung.
 - 🧾 **OBIS-Code bestimmt die Richtung** - OBIS-Code auswählen (z. B. `1.8.2`, `2.8.2`), enerABot erkennt automatisch Bezug oder Einspeisung, nach IEC 62056-6-1
 - 🔌 **Quellenunabhängig** - funktioniert mit jedem totalen/kumulativen Energiesensor
 - 🆔 **Zähler-ID** - optional die Seriennummer/Kennung des physischen Zählers speichern
-- 💶 **Tarifpreis (optional)** - EUR/kWh-Preis für zukünftige Kostenberechnung speichern
-- 🗓️ **Ablesezyklus** - Zähler optional als täglich, monatlich oder manuell abzulesend markieren
+  - 💶 **Tarifpreis (optional)** - EUR/kWh-Preis für zukünftige Kostenberechnung speichern
+  - 💶 **Dynamische Preisunterstützung** - fester EUR/kWh-Preis oder Verknüpfung mit einem dynamischen Preissensor (z. B. Tibber, Nord Pool, Awattar)
+  - 🧮 **Automatische Kostenberechnung** - ein eigener Kosten-Sensor akkumuliert die Kosten inkrementell auf Basis der konfigurierten Preisquelle
+  - 🔄 **Kosten-Reset-Zyklus** - akkumulierte Kosten automatisch monatlich, jährlich oder nie zurücksetzen lassen
+  - 🔘 **Reset-Button und -Service** - Offset und Kosten für einen oder alle Zähler per UI-Button oder `enerabot.reset_meter`-Service zurücksetzen
+  - 🗓️ **Ablesezyklus** - Zähler optional als täglich, monatlich oder manuell abzulesend markieren
 - 🧮 **Coordinator-basierte Updates** - Offsets werden bei jedem Sensor-Update live angewendet
 - 🛡️ **Robustes Fehlerverhalten** - nicht verfügbare/unbekannte Quellsensoren zerstören keine Statistik (`TOTAL_INCREASING` bleibt intakt)
 - 🕒 **Letzte Korrektur nachvollziehbar** - der Sensor zeigt `last_correction`, `offset`, `obis_code`, `raw_sensor`, sowie optional `meter_id` und `tariff_price`
@@ -68,6 +72,18 @@ andere totaler Bezugs-/Einspeisesensor funktioniert genauso gut.
 6. Ab sofort meldet der enerABot-Sensor `quellwert + offset` - stets passend zum physischen Zähler
 7. Wenn du sowohl einen Bezugs- als auch einen Einspeisesensor hast, fügst du enerABot ein zweites Mal für die andere Richtung hinzu - jedes Zählerregister erhält seinen eigenen Eintrag
 8. Optional kannst du den Eintrag mit einer Zähler-ID, einem Tarifpreis und einem Ablesezyklus versehen - entweder direkt bei der Einrichtung oder später über die Optionen. Diese Felder sind rein beschreibende Metadaten und beeinflussen die Offset-Berechnung nicht
+
+## Preisquellen und Kostenerfassung
+
+Jeder enerABot-Eintrag kann optional zusätzlich zur Energie auch Kosten erfassen:
+
+1. Wähle bei der Einrichtung oder später über die Optionen einen **Preismodus**: `Kein Preis`, `Fester Preis` oder `Dynamischer Preissensor`
+2. Bei **Fester Preis** gibst du direkt einen EUR/kWh-Wert ein
+3. Bei **Dynamischer Preissensor** wählst du eine beliebige Sensor-Entity, die den aktuellen Preis liefert (z. B. aus einer Tibber-, Nord-Pool- oder Awattar-Integration, oder eines eigenen Template-Sensors)
+4. Ist eine Preisquelle konfiguriert, erstellt enerABot einen zusätzlichen **Kosten**-Sensor, der die Kosten inkrementell akkumuliert - nur der seit dem letzten Update verbrauchte Energiedelta wird mit dem zu diesem Zeitpunkt gültigen Preis verrechnet, sodass vergangene Kosten auch bei späteren Preisänderungen korrekt bleiben
+5. Wähle einen **Kosten-Reset-Zyklus**: `Nie` (laufender Gesamtwert seit Einrichtung), `Monatlich` oder `Jährlich` - der Kosten-Sensor setzt sich zu Beginn der nächsten Periode automatisch auf 0 zurück
+
+> Eine spätere Änderung der Preisquelle berechnet vergangene Kosten nicht neu - nur zukünftige Energie-Deltas nutzen den neuen Preis.
 
 ## Installation via HACS
 
@@ -103,11 +119,23 @@ Nach der Einrichtung öffnest du über **Konfigurieren** die Optionen, um Offset
 
 ## Entitäten
 
-Jeder enerABot-Eintrag erstellt genau einen Sensor:
+Für jeden konfigurierten Zähler erstellt enerABot folgende Entitäten:
 
-| Entität               | Typ    | Beschreibung                                                    |
-| ----------------------- | ------ | ----------------------------------------------------------------- |
-| `sensor.<name>`        | Sensor | Energiewert mit angewendetem Offset; benannt "Import" oder "Export" je nach OBIS-Code |
+| Entität                             | Typ    | Beschreibung                                   |
+| -------------------------------------- | ------ | ------------------------------------------------|
+| `sensor.<name>`                       | Sensor | Energiewert mit angewendetem Offset; benannt "Import" oder "Export" je nach OBIS-Code |
+| `sensor.<name>_cost` (optional)       | Sensor | Akkumulierte Kosten, nur falls eine Preisquelle konfiguriert ist |
+| `button.<name>_reset`                 | Button | Setzt Offset, Kosten und Korrekturverlauf für diesen Zähler zurück |
+
+## Kosten-Entität (optional)
+
+Ist eine Preisquelle konfiguriert, erstellt enerABot eine zusätzliche Entität pro Zähler:
+
+| Entität                    | Typ    | Beschreibung                                                |
+| ---------------------------- | ------ | ----------------------------------------------------------- |
+| `sensor.<name>_cost`        | Sensor | Akkumulierte Kosten in deiner Währung, basierend auf der konfigurierten Preisquelle |
+
+Diese Entität ist nicht verfügbar, wenn keine Preisquelle konfiguriert ist, oder wenn der verknüpfte dynamische Preissensor nicht verfügbar ist.
 
 Der Sensor zeigt folgende Attribute:
 
@@ -133,19 +161,40 @@ data:
 
 Die Richtung (Bezug/Einspeisung) wird automatisch aus dem im passenden Config-Eintrag gespeicherten OBIS-Code bestimmt - eine separate Angabe ist nicht nötig.
 
-## Bekannte Einschränkungen (0.2.0-beta)
+### `enerabot.reset_meter`
+
+Setzt den gespeicherten Offset, Kosten-Akkumulator und Korrekturverlauf für einen oder alle konfigurierten Zähler zurück.
+
+```yaml
+service: enerabot.reset_meter
+data:
+  entity_id: sensor.mein_zaehler
+```
+
+```yaml
+service: enerabot.reset_meter
+data:
+  reset_all: true
+```
+
+> ⚠️ Nach einem Reset zeigt der Zähler-Sensor wieder den unkorrigierten Rohwert des Quellsensors an, bis du über die Optionen einen neuen Zählerstand eingibst.
+
+Alternativ kannst du die **Reset**-Button-Entität jedes Zählers nutzen, um denselben Vorgang direkt über die UI auszulösen, ohne die Entwicklerwerkzeuge zu öffnen.
+
+## Bekannte Einschränkungen (0.3.0-beta)
 
 - Jeder Eintrag erfasst genau ein Zählerregister - Bezug und Einspeisung erfordern zwei separate Einträge
 - Keine Offset-Historie; nur der aktuellste Offset und Korrekturzeitpunkt werden gespeichert
-- Noch keine automatische Kostenberechnung aus `tariff_price` (bisher nur Metadaten)
 - Nutzer, die von 0.1.x aktualisieren, erhalten eine automatische Migration - ein kombinierter Bezugs+Einspeise-Eintrag wird in zwei separate Einträge aufgeteilt; bitte nach dem Update die Offsets prüfen
+- Die Kostenberechnung setzt voraus, dass der verknüpfte Preissensor einen Preis pro kWh in derselben Währung wie deine Home-Assistant-Instanz liefert - keine automatische Währungsumrechnung
+- Eine nachträgliche Änderung der Preisquelle berechnet vergangene Kosten nicht neu
+- Ein Reset löscht die Kostenhistorie eines Zählers vollständig - ein Reset kann nicht rückgängig gemacht werden
 
 ## Geplante Funktionen (zukünftige Releases)
 
-- 💶 **Automatische Kostenberechnung** anhand des gespeicherten `tariff_price`
-- 📊 **Offset-Historie** - alle vergangenen Korrekturen nachvollziehbar machen, nicht nur die letzte
-- 📱 **Lovelace-Karte** für schnelle Zählerkorrektur ohne Öffnen der Optionen
-- 🔔 **Abweichungs-Benachrichtigungen** bei Überschreiten eines konfigurierbaren Schwellenwerts
+- 📊 **Offset- und Kosten-Historie** - alle vergangenen Korrekturen und Kostenperioden nachvollziehbar machen, nicht nur die aktuelle
+- 📱 **Lovelace-Karte** für schnelle Zählerkorrektur und Kostenübersicht ohne Öffnen der Optionen
+- 🔔 **Abweichungs- und Preis-Benachrichtigungen** - Warnung bei starker Offset-Drift oder ungewöhnlich hohen dynamischen Preisen
 - 🔄 **Generalisierte Sensor-Unterstützung** - beliebige `total_increasing`-Sensoren mit wählbarer Einheit, nicht nur Energie
 
 ## Changelog

@@ -14,11 +14,15 @@ from custom_components.enerabot.const import (
     CONF_METER_ID,
     CONF_NAME,
     CONF_OBIS_CODE,
+    CONF_PRICE_MODE,
     CONF_SENSOR,
     CONF_TARIFF_PRICE,
     DOMAIN,
+    OPTION_COST_TOTAL,
     OPTION_LAST_CORRECTION,
     OPTION_OFFSET,
+    PRICE_MODE_FIXED,
+    PRICE_MODE_NONE,
 )
 
 
@@ -180,3 +184,123 @@ async def test_sensor_name_is_just_import_export(hass: HomeAssistant, mock_confi
     elif obis_code.startswith("2.8"):
         assert sensor._attr_name == "Export"
     assert sensor._attr_has_entity_name is True
+
+
+async def test_cost_sensor_created(hass: HomeAssistant, setup_integration):
+    """Test that cost sensor is created when tariff_price is configured."""
+    from custom_components.enerabot.sensor import EnerABotCostSensor
+
+    entry = setup_integration
+    entity_registry = er.async_get(hass)
+    entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_cost")
+    assert entity_id is not None
+
+    state = hass.states.get(entity_id)
+    assert state is not None
+
+
+async def test_cost_sensor_not_created_without_price(hass: HomeAssistant):
+    """Test that cost sensor is not created when tariff_price is not set."""
+    from custom_components.enerabot.coordinator import EnerABotCoordinator
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Test No Price",
+        data={
+            CONF_NAME: "Test No Price",
+            CONF_SENSOR: "sensor.test_import",
+            CONF_OBIS_CODE: "1.8.2",
+        },
+        options={
+            OPTION_OFFSET: 0.0,
+            CONF_PRICE_MODE: PRICE_MODE_NONE,
+        },
+        unique_id="sensor.test_no_price",
+    )
+    entry.add_to_hass(hass)
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    with patch(
+        "custom_components.enerabot.coordinator.EnerABotCoordinator._async_update_data",
+        return_value=100.5,
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    entity_registry = er.async_get(hass)
+    entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_cost")
+    assert entity_id is None
+
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_cost_sensor_native_value(hass: HomeAssistant):
+    """Test that cost sensor returns the accumulated cost from coordinator."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Test Cost Sensor",
+        data={
+            CONF_NAME: "Test Cost Sensor",
+            CONF_SENSOR: "sensor.test_import",
+            CONF_OBIS_CODE: "1.8.2",
+        },
+        options={
+            OPTION_OFFSET: 0.0,
+            CONF_PRICE_MODE: PRICE_MODE_FIXED,
+            CONF_TARIFF_PRICE: 0.35,
+            OPTION_COST_TOTAL: 42.50,
+        },
+        unique_id="sensor.test_cost_sensor",
+    )
+    entry.add_to_hass(hass)
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    with patch(
+        "custom_components.enerabot.coordinator.EnerABotCoordinator._async_update_data",
+        return_value=100.5,
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    entity_registry = er.async_get(hass)
+    entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_cost")
+    assert entity_id is not None
+
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert float(state.state) == 42.50
+
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_cost_sensor_created_when_price_configured(hass: HomeAssistant, setup_integration):
+    """Cost sensor should be created and have a translated name when tariff_price is set."""
+    from homeassistant.helpers import entity_registry as er
+
+    entry = setup_integration
+    entity_registry = er.async_get(hass)
+    entity_id = entity_registry.async_get_entity_id("sensor", DOMAIN, f"{entry.entry_id}_cost")
+    assert entity_id is not None
+
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.name == "Test Meter Cost"
+
+
+async def test_cost_sensor_unavailable_without_price(hass: HomeAssistant, mock_config_entry):
+    """Cost sensor should report unavailable if tariff_price is later removed from options."""
+    from custom_components.enerabot.coordinator import EnerABotCoordinator
+    from custom_components.enerabot.sensor import EnerABotCostSensor
+
+    coordinator = EnerABotCoordinator(hass, mock_config_entry)
+    sensor = EnerABotCostSensor(coordinator, mock_config_entry)
+
+    assert sensor.available is True
+
+    new_options = {k: v for k, v in mock_config_entry.options.items() if k != CONF_TARIFF_PRICE}
+    hass.config_entries.async_update_entry(mock_config_entry, options=new_options)
+    await hass.async_block_till_done()
+
+    assert sensor.available is False

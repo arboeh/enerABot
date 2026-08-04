@@ -22,3 +22,23 @@ set_energy_meter:
           step: 1
           unit_of_measurement: kWh
           mode: box
+
+reset_meter:
+  name: Reset meter
+  description: >-
+    Reset the stored offset, cost accumulator and correction history for a
+    meter. Warning: after resetting, the sensor reports the raw source value
+    again until a new correction is entered.
+  fields:
+    entity_id:
+      name: Energy Sensor
+      description: The energy sensor entity_id to reset (ignored if reset_all is true)
+      selector:
+        entity:
+          domain: sensor
+    reset_all:
+      name: Reset all meters
+      description: If true, resets all configured enerABot meters instead of just one
+      default: false
+      selector:
+        boolean:

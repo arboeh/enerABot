@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -14,18 +15,22 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
+    ATTR_RESET_ALL,
     CONF_NAME,
     CONF_OBIS_CODE,
     CONF_SENSOR,
     DOMAIN,
+    OPTION_COST_LAST_ENERGY,
+    OPTION_COST_PERIOD_START,
+    OPTION_COST_TOTAL,
     OPTION_LAST_CORRECTION,
     OPTION_OFFSET,
+    PLATFORMS,
+    SERVICE_RESET_METER,
 )
 from .coordinator import EnerABotCoordinator
 
 LOGGER = logging.getLogger(__name__)
-
-PLATFORMS = ["sensor"]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -70,23 +75,71 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 def register_services(hass: HomeAssistant) -> None:
     """Register enerABot services."""
-    if hass.services.has_service(DOMAIN, "set_energy_meter"):
-        return
+    if not hass.services.has_service(DOMAIN, "set_energy_meter"):
 
-    async def handle_set_energy_meter(call: ServiceCall) -> None:
-        """Handle set_energy_meter service call."""
-        entity_id = call.data["entity_id"]
-        meter_value = call.data["meter_value"]
+        async def handle_set_energy_meter(call: ServiceCall) -> None:
+            """Handle set_energy_meter service call."""
+            entity_id = call.data["entity_id"]
+            meter_value = call.data["meter_value"]
 
-        await calculate_and_store_offset(hass, entity_id, meter_value)
+            await calculate_and_store_offset(hass, entity_id, meter_value)
 
-    hass.services.async_register(
-        DOMAIN,
-        "set_energy_meter",
-        handle_set_energy_meter,
-    )
+        hass.services.async_register(
+            DOMAIN,
+            "set_energy_meter",
+            handle_set_energy_meter,
+        )
+
+    if not hass.services.has_service(DOMAIN, SERVICE_RESET_METER):
+
+        async def handle_reset_meter(call: ServiceCall) -> None:
+            """Handle reset_meter service call."""
+            reset_all: bool = call.data.get(ATTR_RESET_ALL, False)
+            entity_id: str | None = call.data.get("entity_id")
+
+            await reset_meter(hass, entity_id, reset_all)
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_RESET_METER,
+            handle_reset_meter,
+            schema=vol.Schema(
+                {
+                    vol.Optional(ATTR_RESET_ALL, default=False): bool,
+                    vol.Optional("entity_id"): str,
+                }
+            ),
+        )
 
     LOGGER.info("Registered enerABot services")
+
+
+async def reset_meter(
+    hass: HomeAssistant,
+    entity_id: str | None = None,
+    reset_all: bool = False,
+) -> None:
+    """Reset offset, correction and cost accumulator for one or all meters."""
+    entries = hass.config_entries.async_entries(DOMAIN)
+    matched = False
+    for entry in entries:
+        if not reset_all and entry.data.get(CONF_SENSOR) != entity_id:
+            continue
+
+        matched = True
+        new_options = {
+            **entry.options,
+            OPTION_OFFSET: 0.0,
+            OPTION_LAST_CORRECTION: None,
+            OPTION_COST_TOTAL: 0.0,
+            OPTION_COST_LAST_ENERGY: None,
+            OPTION_COST_PERIOD_START: None,
+        }
+        hass.config_entries.async_update_entry(entry, options=new_options)
+        LOGGER.info("Reset meter values for entry %s", entry.entry_id)
+
+    if not matched:
+        LOGGER.warning("No matching config entry found for entity %s", entity_id)
 
 
 async def calculate_and_store_offset(
@@ -191,6 +244,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN, None)
             hass.services.async_remove(DOMAIN, "set_energy_meter")
+            hass.services.async_remove(DOMAIN, SERVICE_RESET_METER)
             LOGGER.info("Unregistered enerABot services")
 
     return unload_ok

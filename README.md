@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/arboeh/enerABot/blob/main/LICENSE)
 [![maintained](https://img.shields.io/maintenance/yes/2026)](https://github.com/arboeh/enerABot/graphs/commit-activity)
 
-> **⚠️ Beta Release** - enerABot 0.2.0-beta is functional but under active development.
+> **⚠️ Beta Release** - enerABot 0.3.0-beta is functional but under active development.
 > Expect breaking changes before 1.0.0. Please report issues on GitHub.
 
 **enerABot** brings your physical energy meter reading into Home Assistant
@@ -33,8 +33,12 @@ grid export sensor, simply add enerABot twice - once per direction.
 - 🧾 **OBIS code determines direction** - select an OBIS code (e.g. `1.8.2`, `2.8.2`) and enerABot automatically knows whether it's import or export, per IEC 62056-6-1
 - 🔌 **Source-agnostic** - works with any total/cumulative energy sensor
 - 🆔 **Meter ID tracking** - optionally store the physical meter's serial number/ID
-- 💶 **Tariff price (optional)** - store a EUR/kWh price for future cost calculations
-- 🗓️ **Reading cycle** - optionally mark a meter as daily, monthly, or manual reading cadence
+  - 💶 **Tariff price (optional)** - store a EUR/kWh price for future cost calculations
+  - 💶 **Dynamic price support** - use a fixed EUR/kWh price, or link a dynamic price sensor (e.g. Tibber, Nord Pool, Awattar) instead
+  - 🧮 **Automatic cost calculation** - a dedicated cost sensor accumulates cost incrementally based on the configured price source
+  - 🔄 **Cost reset cycle** - let accumulated cost reset automatically monthly, yearly, or never
+  - 🔘 **Reset button and service** - reset offset and cost for one meter or all meters at once, via UI button or `enerabot.reset_meter` service
+  - 🗓️ **Reading cycle** - optionally mark a meter as daily, monthly, or manual reading cadence
 - 🧮 **Coordinator-based updates** - offsets are applied live on every sensor update
 - 🛡️ **Graceful degradation** - unavailable/unknown source sensors don't break statistics (`TOTAL_INCREASING` stays intact)
 - 🕒 **Last correction tracking** - the sensor exposes `last_correction`, `offset`, `obis_code`, `raw_sensor`, and optionally `meter_id` and `tariff_price`
@@ -68,6 +72,18 @@ well.
 6. From then on, the enerABot sensor reports `source_value + offset` - always matching the physical meter
 7. If you have both an import and an export sensor, add enerABot a second time for the other direction - each meter register gets its own entry
 8. Optionally, you can tag the entry with a meter ID, tariff price, and reading cycle - either at setup or later via Options. These fields are purely descriptive metadata and don't affect the offset calculation
+
+## Price Sources and Cost Tracking
+
+Each enerABot entry can optionally track cost alongside energy:
+
+1. Choose a **price mode** during setup or later via Options: `None`, `Fixed price`, or `Dynamic price sensor`
+2. With **Fixed price**, enter a EUR/kWh value directly
+3. With **Dynamic price sensor**, select any sensor entity that reports the current price (e.g. from a Tibber, Nord Pool, or Awattar integration, or your own template sensor)
+4. If a price source is configured, enerABot creates an additional **Cost** sensor that accumulates cost incrementally - only the energy consumed since the last update is multiplied by the price valid at that moment, so past cost stays accurate even if the price changes later
+5. Choose a **cost reset cycle**: `None` (running total since setup), `Monthly`, or `Yearly` - the cost sensor resets to 0 automatically at the start of the next period
+
+> Changing the price source later does not recalculate past cost - only future energy deltas use the new price.
 
 ## Installation via HACS
 
@@ -103,11 +119,23 @@ After setup, open the integration options via **Configure** to correct offsets a
 
 ## Entities
 
-Each enerABot entry creates exactly one sensor:
+For each configured meter, enerABot creates the following entities:
 
-| Entity                 | Type   | Description                                        |
-| ----------------------- | ------ | --------------------------------------------------- |
-| `sensor.<name>`         | Sensor | Energy value with offset applied; named "Import" or "Export" based on the OBIS code |
+| Entity                            | Type   | Description                                  |
+| --------------------------------- | ------ | --------------------------------------------- |
+| `sensor.<name>`                   | Sensor | Energy value with offset applied; named "Import" or "Export" based on the OBIS code |
+| `sensor.<name>_cost` (optional)   | Sensor | Accumulated cost, only if a price source is configured |
+| `button.<name>_reset`             | Button | Resets offset, cost, and correction history for this meter |
+
+## Cost Entity (optional)
+
+If a price source is configured, enerABot creates one additional entity per meter:
+
+| Entity                 | Type   | Description                                                |
+| ------------------------ | ------ | ----------------------------------------------------------- |
+| `sensor.<name>_cost`    | Sensor | Accumulated cost in your currency, based on the configured price source |
+
+This entity is unavailable if no price source is configured, or if the linked dynamic price sensor becomes unavailable.
 
 The sensor exposes the following attributes:
 
@@ -133,19 +161,40 @@ data:
 
 The direction (import/export) is determined automatically from the OBIS code stored in the matching config entry - no need to specify it separately.
 
-## Known Limitations (0.2.0-beta)
+### `enerabot.reset_meter`
+
+Resets the stored offset, cost accumulator, and correction history for one meter or all configured meters.
+
+```yaml
+service: enerabot.reset_meter
+data:
+  entity_id: sensor.my_meter
+```
+
+```yaml
+service: enerabot.reset_meter
+data:
+  reset_all: true
+```
+
+> ⚠️ After a reset, the meter sensor reports the raw, uncorrected source value again until you enter a new meter reading via Options.
+
+Alternatively, use the **Reset** button entity created for each meter to trigger the same action from the UI, without needing Developer Tools.
+
+## Known Limitations (0.3.0-beta)
 
 - Each entry tracks exactly one meter register - import and export require two separate entries
 - No historical offset log; only the most recent offset and correction timestamp are stored
-- No automatic cost calculation from `tariff_price` yet (metadata only)
 - Users upgrading from 0.1.x will have their existing entries automatically migrated - a combined import+export entry is split into two separate entries; please verify offsets after upgrading
+- Cost calculation assumes the linked price sensor reports a per-kWh price in the same currency as your Home Assistant instance - no automatic currency conversion
+- Changing the price source retroactively does not recalculate historical cost
+- Resetting a meter clears its cost history entirely - there is no way to undo a reset
 
 ## Planned Features (future releases)
 
-- 💶 **Automatic cost calculation** using the stored `tariff_price`
-- 📊 **Offset history** - track all past corrections, not just the latest one
-- 📱 **Lovelace card** for quick meter correction without opening options
-- 🔔 **Drift notifications** when the calculated offset exceeds a configurable threshold
+- 📊 **Offset and cost history** - track all past corrections and cost periods, not just the current one
+- 📱 **Lovelace card** for quick meter correction and cost overview without opening options
+- 🔔 **Drift and price notifications** - alert on large offset drift or unusually high dynamic prices
 - 🔄 **Generalized sensor support** - accept any `total_increasing` sensor with selectable unit of measurement, not limited to energy
 
 ## Changelog

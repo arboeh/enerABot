@@ -14,11 +14,17 @@ from custom_components.enerabot.const import (
     CONF_METER_ID,
     CONF_NAME,
     CONF_OBIS_CODE,
+    CONF_PRICE_MODE,
+    CONF_PRICE_SENSOR,
     CONF_SENSOR,
     CONF_TARIFF_PRICE,
+    COST_RESET_NONE,
     DOMAIN,
     OPTION_LAST_CORRECTION,
     OPTION_OFFSET,
+    PRICE_MODE_DYNAMIC,
+    PRICE_MODE_FIXED,
+    PRICE_MODE_NONE,
 )
 
 
@@ -245,6 +251,154 @@ async def test_form_metadata_fields_optional(hass: HomeAssistant) -> None:
 
     assert result2["type"] == FlowResultType.CREATE_ENTRY
     assert "meter_id" not in result2["data"]
+
+
+async def test_form_price_mode_none_default(hass: HomeAssistant) -> None:
+    """Test that price_mode defaults to 'none' when not provided."""
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test No Price",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert result2["options"][CONF_PRICE_MODE] == PRICE_MODE_NONE
+
+
+async def test_form_price_mode_fixed_with_price(hass: HomeAssistant) -> None:
+    """Test fixed price mode with tariff_price succeeds."""
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Fixed Price",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+            "tariff_price": 0.32,
+            "price_mode": PRICE_MODE_FIXED,
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert result2["options"][CONF_PRICE_MODE] == PRICE_MODE_FIXED
+    assert result2["options"][CONF_TARIFF_PRICE] == 0.32
+
+
+async def test_form_price_mode_fixed_without_price_fails(hass: HomeAssistant) -> None:
+    """Test fixed price mode without tariff_price fails validation."""
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Fixed No Price",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+            "price_mode": PRICE_MODE_FIXED,
+        },
+    )
+
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["errors"] == {"base": "cannot_connect"}
+
+
+async def test_form_price_mode_dynamic_without_sensor_fails(hass: HomeAssistant) -> None:
+    """Test dynamic price mode without a price sensor fails validation."""
+    hass.states.async_set("sensor.test_import", "100.0")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Dynamic No Sensor",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+            "price_mode": PRICE_MODE_DYNAMIC,
+        },
+    )
+
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["errors"] == {"base": "cannot_connect"}
+
+
+async def test_form_price_mode_dynamic_with_sensor(hass: HomeAssistant) -> None:
+    """Test dynamic price mode with a valid price sensor succeeds."""
+    hass.states.async_set("sensor.test_import", "100.0")
+    hass.states.async_set("sensor.dynamic_price", "0.35")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Dynamic Price",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+            "price_mode": PRICE_MODE_DYNAMIC,
+            "price_sensor": "sensor.dynamic_price",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert result2["options"][CONF_PRICE_MODE] == PRICE_MODE_DYNAMIC
+    assert result2["options"][CONF_PRICE_SENSOR] == "sensor.dynamic_price"
+
+
+async def test_form_price_mode_dynamic_sensor_unavailable_fails(hass: HomeAssistant) -> None:
+    """Test dynamic price mode with an unavailable sensor fails."""
+    hass.states.async_set("sensor.test_import", "100.0")
+    hass.states.async_set("sensor.dynamic_price", "unavailable")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Dynamic Unavailable",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+            "price_mode": PRICE_MODE_DYNAMIC,
+            "price_sensor": "sensor.dynamic_price",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["errors"] == {"base": "cannot_connect"}
+
+
+async def test_form_price_mode_dynamic_sensor_non_numeric_fails(hass: HomeAssistant) -> None:
+    """Test dynamic price mode with a non-numeric sensor fails."""
+    hass.states.async_set("sensor.test_import", "100.0")
+    hass.states.async_set("sensor.dynamic_price", "abc")
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Dynamic Non-Numeric",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+            "price_mode": PRICE_MODE_DYNAMIC,
+            "price_sensor": "sensor.dynamic_price",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["errors"] == {"base": "cannot_connect"}
 
 
 async def test_form_invalid_obis_code_fails(hass: HomeAssistant) -> None:

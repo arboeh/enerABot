@@ -11,6 +11,8 @@
           "initial_meter_value": "Initial Meter Reading (kWh, optional)",
           "meter_id": "Meter ID",
           "tariff_price": "Tariff Price (EUR/kWh)",
+          "price_mode": "Price Mode",
+          "cost_reset_cycle": "Cost Reset Cycle",
           "reading_cycle": "Reading Cycle"
         }
       }
@@ -27,7 +29,16 @@
     "step": {
       "init": {
         "title": "enerABot Meter Correction",
-        "description": "Enter the current real Zählerstand to calculate the offset."
+        "description": "Enter the current real Zählerstand to calculate the offset.",
+        "data": {
+          "meter_value": "Current Meter Reading",
+          "meter_id": "Meter ID",
+          "obis_code": "OBIS Code",
+          "tariff_price": "Tariff Price (EUR/kWh)",
+          "price_mode": "Price Mode",
+          "price_sensor": "Price Sensor",
+          "cost_reset_cycle": "Cost Reset Cycle"
+        }
       }
     }
   },
@@ -37,6 +48,20 @@
         "daily": "Daily",
         "monthly": "Monthly",
         "manual": "Manual"
+      }
+    },
+    "price_mode": {
+      "options": {
+        "none": "No price tracking",
+        "fixed": "Fixed price",
+        "dynamic": "Dynamic price"
+      }
+    },
+    "cost_reset_cycle": {
+      "options": {
+        "none": "Never (running total)",
+        "monthly": "Monthly",
+        "yearly": "Yearly"
       }
     }
   },
@@ -53,6 +78,32 @@
           "name": "Meter Value",
           "description": "The current real Zählerstand in kWh"
         }
+      }
+    },
+    "reset_meter": {
+      "name": "Reset meter",
+      "description": "Reset the stored offset, cost accumulator and correction history for a meter.",
+      "fields": {
+        "entity_id": {
+          "name": "Energy Sensor",
+          "description": "The energy sensor entity_id to reset"
+        },
+        "reset_all": {
+          "name": "Reset all meters",
+          "description": "If true, resets all configured enerABot meters instead of just one"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost": {
+        "name": "Cost"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Reset"
       }
     }
   }
