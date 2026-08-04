@@ -113,11 +113,29 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options - main menu."""
+        errors: dict[str, str] = {}
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            meter_value = user_input.pop("meter_value")
+            sensor = self._config_entry.data[CONF_SENSOR]
+            current_state = self.hass.states.get(sensor)
+
+            if current_state is None or current_state.state in (
+                "unknown",
+                "unavailable",
+            ):
+                errors["base"] = "cannot_connect"
+            else:
+                try:
+                    current = float(current_state.state)
+                except (ValueError, TypeError):
+                    errors["base"] = "cannot_connect"
+                else:
+                    user_input[OPTION_OFFSET] = round(meter_value - current, 3)
+                    user_input[OPTION_LAST_CORRECTION] = datetime.now(UTC).isoformat()
+                    return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
             step_id="init",
             data_schema=self._build_meter_correction_schema(),
-            errors={},
+            errors=errors,
         )
