@@ -10,8 +10,12 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.helpers import selector
+
+try:
+    from homeassistant.config_entries import ConfigFlowResult
+except ImportError:  # pragma: no cover - older HA versions
+    from homeassistant.data_entry_flow import FlowResult as ConfigFlowResult
 
 from .const import (
     CONF_METER_ID,

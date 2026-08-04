@@ -2,8 +2,10 @@
 
 """Coordinator for the enerABot integration."""
 
+import inspect
 import logging
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -23,12 +25,16 @@ class EnerABotCoordinator(DataUpdateCoordinator[float | None]):
 
     def __init__(self, hass, config_entry) -> None:
         """Initialize the coordinator."""
+        kwargs: dict[str, Any] = {
+            "name": DOMAIN,
+            "update_interval": timedelta(seconds=UPDATE_INTERVAL),
+        }
+        if "config_entry" in inspect.signature(DataUpdateCoordinator.__init__).parameters:
+            kwargs["config_entry"] = config_entry
         super().__init__(
             hass,
             LOGGER,
-            name=DOMAIN,
-            config_entry=config_entry,
-            update_interval=timedelta(seconds=UPDATE_INTERVAL),
+            **kwargs,
         )
         self.config_entry = config_entry
         self.sensor = config_entry.data[CONF_SENSOR]

@@ -7,6 +7,7 @@ import logging
 import sys
 import uuid
 import warnings
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -15,13 +16,20 @@ if sys.platform == "win32":
     import types
 
     if sys.modules.get("fcntl") is None:
-        _fcntl_stub = types.ModuleType("fcntl")
+        _fcntl_stub: Any = types.ModuleType("fcntl")
         _fcntl_stub.LOCK_EX = 1
         _fcntl_stub.LOCK_NB = 2
         _fcntl_stub.LOCK_SH = 4
         _fcntl_stub.LOCK_UN = 8
         _fcntl_stub.flock = lambda *args, **kwargs: None
         sys.modules["fcntl"] = _fcntl_stub
+
+    if sys.modules.get("resource") is None:
+        _resource_stub: Any = types.ModuleType("resource")
+        _resource_stub.RLIMIT_NOFILE = 7
+        _resource_stub.getrlimit = lambda *a, **kw: (256, 4096)
+        _resource_stub.setrlimit = lambda *a, **kw: None
+        sys.modules["resource"] = _resource_stub
 
 import pytest_socket
 from homeassistant.config_entries import ConfigEntryState
