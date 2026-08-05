@@ -14,7 +14,7 @@ set_energy_meter:
           domain: sensor
     meter_value:
       name: Meter Value
-          description: The current real meter reading in kWh
+      description: The current real meter reading in kWh
       required: true
       example: 1234.5
       selector:

@@ -108,6 +108,14 @@ python -m script.hassfest
 
 > Verhindert, dass verbotene Schlüssel in `strings.json` (z. B. `selector`, `required`, `example` in Service-Feldern) erst in der CI auffallen. Muss vor jedem Commit ausgeführt werden.
 
+Alternativ (Docker, exakt wie in der GitHub-CI):
+
+```powershell
+docker run --rm -v ${PWD}:/github/workspace ghcr.io/home-assistant/hassfest
+```
+
+> Dies ist der exakte Validator, der in der GitHub-CI läuft. Verwende diese Variante, wenn lokale `script.hassfest`-Probleme auftreten oder um Umgebungsunterschiede zu vermeiden.
+
 ### 6. CHANGELOG.md aktualisieren
 
 ```markdown

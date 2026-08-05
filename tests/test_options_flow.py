@@ -365,4 +365,5 @@ async def test_options_flow_price_sensor_missing_device_class_still_selectable_v
 
     schema_dict = schema.schema
     price_sensor_key = next(k for k in schema_dict if k == CONF_PRICE_SENSOR)
-    assert price_sensor_key.default() == "sensor.legacy_price"
+    assert price_sensor_key.default() == "sensor.legacy_price"  # type: ignore[attr-defined]
+    # voluptuous stub gap: Optional is str subtype with .default
