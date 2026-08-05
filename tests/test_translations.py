@@ -72,24 +72,17 @@ def test_config_flow_schema_keys_have_translations() -> None:
     assert not missing, f"Missing translations for config flow fields: {missing}"
 
 
-USER_DATA_FIELDS = [
-    "name", "sensor", "obis_code", "initial_meter_value", "meter_id",
-    "tariff_price", "price_mode", "price_sensor", "cost_reset_cycle", "reading_cycle",
-]
-
-INIT_DATA_FIELDS = [
-    "meter_value", "meter_id", "obis_code", "tariff_price",
-    "price_mode", "price_sensor", "cost_reset_cycle",
-]
+USER_DATA_FIELDS = ["sensor", "price_sensor"]
+INIT_DATA_FIELDS = ["price_sensor"]
 
 _SUFFIX_RE = re.compile(r"\((Pflicht|Optional|Required)")
 _UNIT_RE = re.compile(r"\b(kWh|EUR/kWh|EUR)\b")
 
 
-def _extract_field_text(data: dict, fields: list[str]) -> dict[str, str]:
+def _extract_field_text(data_description: dict) -> dict[str, str]:
+    """Extract description text from data_description fields."""
     texts: dict[str, str] = {}
-    for field in fields:
-        entry = data.get(field)
+    for field, entry in data_description.items():
         if isinstance(entry, dict):
             texts[field] = entry.get("description", "") or entry.get("name", "")
         else:
@@ -98,22 +91,21 @@ def _extract_field_text(data: dict, fields: list[str]) -> dict[str, str]:
 
 
 def test_field_descriptions_have_requirement_suffixes() -> None:
-    """Every field label/description must end with a requirement suffix."""
+    """Every field label/description must end with a requirement suffix.
+
+    data.<field> values must be pure label strings; descriptions live in
+    data_description.<field>.
+    """
     for filename in ("de.json", "en.json"):
         data = json.loads((TRANSLATIONS_DIR / filename).read_text(encoding="utf-8"))
-        for step_key, fields in (
-            ("user", USER_DATA_FIELDS),
-            ("init", INIT_DATA_FIELDS),
-        ):
-            step_data = (
-                data["config"]["step"][step_key]["data"]
-                if step_key == "user"
-                else data["options"]["step"][step_key]["data"]
-            )
-            texts = _extract_field_text(step_data, fields)
+        for step_key in ("user", "init"):
+            step_data = data["config"]["step"][step_key] if step_key == "user" else data["options"]["step"][step_key]
+            texts = _extract_field_text(step_data.get("data_description", {}))
             for field, text in texts.items():
+                if not text:
+                    continue
                 assert _SUFFIX_RE.search(text), (
-                    f"{filename}: field '{field}' in step.{step_key}.data "
+                    f"{filename}: field '{field}' in step.{step_key}.data_description "
                     f"missing requirement suffix: '{text}'"
                 )
 
@@ -122,18 +114,11 @@ def test_field_descriptions_have_no_unit_text() -> None:
     """Field labels/descriptions must not contain hardcoded unit text."""
     for filename in ("de.json", "en.json"):
         data = json.loads((TRANSLATIONS_DIR / filename).read_text(encoding="utf-8"))
-        for step_key, fields in (
-            ("user", USER_DATA_FIELDS),
-            ("init", INIT_DATA_FIELDS),
-        ):
-            step_data = (
-                data["config"]["step"][step_key]["data"]
-                if step_key == "user"
-                else data["options"]["step"][step_key]["data"]
-            )
-            texts = _extract_field_text(step_data, fields)
+        for step_key in ("user", "init"):
+            step_data = data["config"]["step"][step_key] if step_key == "user" else data["options"]["step"][step_key]
+            texts = _extract_field_text(step_data.get("data_description", {}))
             for field, text in texts.items():
                 assert not _UNIT_RE.search(text), (
-                    f"{filename}: field '{field}' in step.{step_key}.data "
+                    f"{filename}: field '{field}' in step.{step_key}.data_description "
                     f"contains forbidden unit text: '{text}'"
                 )

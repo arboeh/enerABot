@@ -6,21 +6,19 @@
         "description": "Select an energy meter sensor. The direction (import/export) is derived from the OBIS code (1.8.x = import, 2.8.x = export). Optionally enter the real meter reading to calibrate the offset immediately. * Required field",
         "data": {
           "name": "Meter Name (Required *).",
-          "sensor": {
-            "name": "Energy Meter Sensor",
-            "description": "Energy meter sensor (Required *)."
-          },
+          "sensor": "Energy Meter Sensor",
           "obis_code": "OBIS Code (e.g. 1.8.2 for import, 2.8.2 for export) (Required *).",
           "initial_meter_value": "Initial Meter Reading (Optional).",
           "meter_id": "Meter ID (Optional).",
           "tariff_price": "Tariff Price (Optional).",
           "price_mode": "Price Mode (Optional).",
-          "price_sensor": {
-            "name": "Price Sensor",
-            "description": "Sensor providing the current electricity price (Required if price mode is dynamic)."
-          },
+          "price_sensor": "Price Sensor",
           "cost_reset_cycle": "Cost Reset Cycle (Optional).",
           "reading_cycle": "Reading Cycle (Optional)."
+        },
+        "data_description": {
+          "sensor": "Energy meter sensor (Required *).",
+          "price_sensor": "Sensor providing the current electricity price (Required if price mode is dynamic)."
         }
       }
     },
@@ -43,11 +41,11 @@
           "obis_code": "OBIS Code (Optional).",
           "tariff_price": "Tariff Price (Optional).",
           "price_mode": "Price Mode (Optional).",
-          "price_sensor": {
-            "name": "Price Sensor",
-            "description": "Sensor providing the current electricity price (Required if price mode is dynamic)."
-          },
+          "price_sensor": "Price Sensor",
           "cost_reset_cycle": "Cost Reset Cycle (Optional)."
+        },
+        "data_description": {
+          "price_sensor": "Sensor providing the current electricity price (Required if price mode is dynamic)."
         }
       }
     }
@@ -86,7 +84,7 @@
         },
         "meter_value": {
           "name": "Meter Value",
-          "description": "The current real Zählerstand in kWh"
+          "description": "The current real meter reading in kWh"
         }
       }
     },

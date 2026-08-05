@@ -30,8 +30,8 @@ enerABot/
 - [ ] Type Check: `python -m pyright custom_components/enerabot`
 - [ ] Pre-commit: `pre-commit run --all-files` ✅ **passed**
 - [ ] VS Code: `even-better-toml` + `ruff`
-- [ ] `scripts/sync-manifest.ps1` !!!! NOCH NICHT IMPLEMENTIERT !!!! (Version manuell in `manifest.json` UND `pyproject.toml` pflegen)
-- [ ] Hassfest-Validierung lokal (optional, läuft sonst nur in CI): `python -m script.hassfest`
+- [ ] `scripts/sync-manifest.ps1` (Version aus `pyproject.toml` in `manifest.json` synchronisieren)
+- [ ] Hassfest-Validierung lokal (muss vor jedem Push ausgeführt werden): `python -m script.hassfest`
 
 ### Remote Setup (einmalig)
 
@@ -66,7 +66,7 @@ pre-commit run --all-files
 
 ### 3. Version aktualisieren
 
-#### Zwei Stellen (Sync-Script fehlt noch)
+#### Zwei Stellen (wird jetzt über sync-manifest.ps1 synchronisiert)
 
 ```json
 // custom_components/enerabot/manifest.json
@@ -83,13 +83,7 @@ pre-commit run --all-files
 version = "0.3.0-dev"  # ← muss synchron zu manifest.json gepflegt werden
 ```
 
-#### Formatierung
-
-```powershell
-taplo format pyproject.toml
-```
-
-> ⚠️ Solange `sync-manifest.ps1` nicht existiert, beide Dateien **manuell** synchron halten und vor dem Commit gegenprüfen.
+Verwende `.\scripts\sync-manifest.ps1` (liest Version aus `pyproject.toml` und schreibt sie nach `manifest.json`), oder `.\scripts\sync-manifest.ps1 -Version "0.3.0"` um beide Dateien zu aktualisieren.
 
 ### 4. Lint, Format, Type Check und Tests ausführen
 
@@ -106,13 +100,13 @@ python -m pytest tests -v --cov=custom_components/enerabot --cov-report=term-mis
 - Pyright --- ✅ 0 errors, 0 warnings
 - Pytest --- ✅ alle Tests passed
 
-### 5. Hassfest lokal prüfen (empfohlen vor jedem Release)
+### 5. Hassfest lokal prüfen (**verpflichtend vor jedem Release**)
 
 ```powershell
 python -m script.hassfest
 ```
 
-> Verhindert, dass verbotene Schlüssel in `strings.json` (z. B. `selector`, `required`, `example` in Service-Feldern) erst in der CI auffallen.
+> Verhindert, dass verbotene Schlüssel in `strings.json` (z. B. `selector`, `required`, `example` in Service-Feldern) erst in der CI auffallen. Muss vor jedem Commit ausgeführt werden.
 
 ### 6. CHANGELOG.md aktualisieren
 
@@ -251,7 +245,9 @@ pre-commit install
 ### manifest.json und pyproject.toml nicht synchron
 
 ```powershell
-# Kein Sync-Script vorhanden -> manuell vergleichen:
+# Sync-Script verwenden:
+.\scripts\sync-manifest.ps1
+# Oder manuell vergleichen:
 Get-Content custom_components/enerabot/manifest.json | Select-String version
 Get-Content pyproject.toml | Select-String version
 ```
@@ -281,13 +277,12 @@ HACS → Reload → Update verfügbar
 ## Release v0.3.0 Checklist
 
 ### Development (dev)
-
 - [ ] `python -m ruff check custom_components/enerabot tests` ✅ passed
 - [ ] `python -m ruff format --check custom_components/enerabot tests` ✅ passed
 - [ ] `python -m pyright custom_components/enerabot` ✅ passed
 - [ ] `python -m pytest tests -v --cov=custom_components/enerabot --cov-report=term-missing` ✅ passed
 - [ ] `pre-commit run --all-files` ✅ passed
-- [ ] `python -m script.hassfest` ✅ passed
+- [ ] `python -m script.hassfest` (**verpflichtend**) ✅ passed
 - [ ] `manifest.json` version = "0.3.0"
 - [ ] `pyproject.toml` version = "0.3.0" (manuell synchron!)
 - [ ] `strings.json` / `translations/de.json` / `translations/en.json` Keys identisch
@@ -326,6 +321,7 @@ pre-commit run --all-files
 python -m ruff check custom_components/enerabot tests
 python -m ruff format --check custom_components/enerabot tests
 python -m pyright custom_components/enerabot
+python -m script.hassfest
 python -m pytest tests -v --cov=custom_components/enerabot --cov-report=term-missing
 git commit -m "feat: XYZ"
 git push origin dev

@@ -1,3 +1,5 @@
+# custom_components/enerabot/services.yaml
+
 set_energy_meter:
   name: Set energy meter
   description: Set the energy meter value and calculate the offset.
@@ -12,7 +14,7 @@ set_energy_meter:
           domain: sensor
     meter_value:
       name: Meter Value
-      description: The current real Zählerstand in kWh
+          description: The current real meter reading in kWh
       required: true
       example: 1234.5
       selector:

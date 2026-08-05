@@ -1,3 +1,5 @@
+# .pre-commit-config.yaml
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -15,3 +17,13 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: hassfest-translations
+        name: hassfest translations validation
+        entry: python -m pytest tests/test_translations.py::test_strings_json_has_no_hassfest_forbidden_keys -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit, push]
