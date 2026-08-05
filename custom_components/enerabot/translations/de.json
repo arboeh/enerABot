@@ -3,24 +3,24 @@
     "step": {
       "user": {
         "title": "enerABot Einrichtung",
-        "description": "Wählen Sie einen Energiezähler-Sensor. Die Richtung (Bezug/Einspeisung) wird vom OBIS-Code abgeleitet (1.8.x = Bezug, 2.8.x = Einspeisung). Optional können Sie den realen Zählerstand eingeben, um den Offset sofort zu kalibrieren.",
+        "description": "Wählen Sie einen Energiezähler-Sensor. Die Richtung (Bezug/Einspeisung) wird vom OBIS-Code abgeleitet (1.8.x = Bezug, 2.8.x = Einspeisung). Optional können Sie den realen Zählerstand eingeben, um den Offset sofort zu kalibrieren. * Pflichtfeld",
         "data": {
           "name": "Name des Zählers",
           "sensor": {
             "name": "Energiezähler-Sensor",
-            "description": "Nur Sensoren mit Device Class 'energy' werden angezeigt. Wenn Ihr Zähler nicht aufgeführt ist, prüfen Sie, ob die Device Class korrekt gesetzt ist."
+            "description": "Energiezähler-Sensor (Pflicht *)."
           },
-          "obis_code": "OBIS-Code (z.B. 1.8.2 für Bezug, 2.8.2 für Einspeisung)",
-          "initial_meter_value": "Aktueller realer Zählerstand (kWh, optional)",
-          "meter_id": "Zähler-ID",
-          "tariff_price": "Tarifpreis (EUR/kWh)",
-          "price_mode": "Preis-Modus",
+          "obis_code": "OBIS-Code (z.B. 1.8.2 für Bezug, 2.8.2 für Einspeisung) (Pflicht *).",
+          "initial_meter_value": "Aktueller realer Zählerstand (Optional).",
+          "meter_id": "Zähler-ID (Optional).",
+          "tariff_price": "Tarifpreis (Optional).",
+          "price_mode": "Preis-Modus (Optional).",
           "price_sensor": {
             "name": "Preis-Sensor",
-            "description": "Nur Sensoren mit Device Class 'monetary' werden angezeigt. Wenn Ihr Preis-Sensor nicht aufgeführt ist, prüfen Sie, ob die Device Class korrekt gesetzt ist."
+            "description": "Sensor mit dem aktuellen Strompreis (Pflicht bei dynamischem Preis)."
           },
-          "cost_reset_cycle": "Kosten-Reset-Zyklus",
-          "reading_cycle": "Ablesezyklus"
+          "cost_reset_cycle": "Kosten-Reset-Zyklus (Optional).",
+          "reading_cycle": "Ablesezyklus (Optional)."
         }
       }
     },
@@ -36,18 +36,18 @@
     "step": {
       "init": {
         "title": "enerABot Zählerkorrektur",
-        "description": "Geben Sie den aktuellen realen Zählerstand ein, um den Offset zu berechnen.",
+        "description": "Geben Sie den aktuellen realen Zählerstand ein, um den Offset zu berechnen. * Pflichtfeld",
         "data": {
-          "meter_value": "Aktueller Zählerstand",
-          "meter_id": "Zähler-ID",
-          "obis_code": "OBIS-Code",
-          "tariff_price": "Tarifpreis (EUR/kWh)",
-          "price_mode": "Preis-Modus",
+          "meter_value": "Aktueller Zählerstand (Pflicht *).",
+          "meter_id": "Zähler-ID (Optional).",
+          "obis_code": "OBIS-Code (Optional).",
+          "tariff_price": "Tarifpreis (Optional).",
+          "price_mode": "Preis-Modus (Optional).",
           "price_sensor": {
             "name": "Preis-Sensor",
-            "description": "Nur Sensoren mit Device Class 'monetary' werden angezeigt. Wenn Ihr Preis-Sensor nicht aufgeführt ist, prüfen Sie, ob die Device Class korrekt gesetzt ist."
+            "description": "Sensor mit dem aktuellen Strompreis (Pflicht bei dynamischem Preis)."
           },
-          "cost_reset_cycle": "Kosten-Reset-Zyklus"
+          "cost_reset_cycle": "Kosten-Reset-Zyklus (Optional)."
         }
       }
     }

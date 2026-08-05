@@ -184,7 +184,7 @@ data:
 
 Alternativ kannst du die **Reset**-Button-Entität jedes Zählers nutzen, um denselben Vorgang direkt über die UI auszulösen, ohne die Entwicklerwerkzeuge zu öffnen.
 
-## Bekannte Einschränkungen (0.3.0)
+## Bekannte Einschränkungen (0.3.1)
 
 - Jeder Eintrag erfasst genau ein Zählerregister - Bezug und Einspeisung erfordern zwei separate Einträge
 - Keine Offset-Historie; nur der aktuellste Offset und Korrekturzeitpunkt werden gespeichert

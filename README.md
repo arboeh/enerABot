@@ -184,7 +184,7 @@ data:
 
 Alternatively, use the **Reset** button entity created for each meter to trigger the same action from the UI, without needing Developer Tools.
 
-## Known Limitations (0.3.0)
+## Known Limitations (0.3.1)
 
 - Each entry tracks exactly one meter register - import and export require two separate entries
 - No historical offset log; only the most recent offset and correction timestamp are stored
