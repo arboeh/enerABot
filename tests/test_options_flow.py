@@ -228,3 +228,26 @@ async def test_options_flow_negative_offset(
 
     assert result2["type"] == FlowResultType.CREATE_ENTRY
     assert mock_config_entry.options[OPTION_OFFSET] == -20.0
+
+
+async def test_options_flow_prefills_current_meter_value(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """Test that the form pre-fills meter_value with source plus offset."""
+    hass.states.async_set("sensor.test_import", "900.0")
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={
+            **mock_config_entry.options,
+            OPTION_OFFSET: 20.0,
+        },
+    )
+
+    result = await hass.config_entries.options.async_init(
+        mock_config_entry.entry_id,
+    )
+
+    assert result["data_schema"] is not None
+    schema = result["data_schema"].schema
+    meter_value_key = next(k for k in schema if str(k) == "meter_value")
+    assert meter_value_key.default() == 920.0

@@ -44,10 +44,20 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
         """Initialize options flow."""
         self._config_entry = config_entry
 
-    def _build_meter_correction_schema(self) -> vol.Schema:
+    def build_meter_correction_schema(self) -> vol.Schema:
         """Build schema for meter correction with metadata fields."""
+        sensor = self._config_entry.data[CONF_SENSOR]
+        offset = self._config_entry.options.get(OPTION_OFFSET, 0.0)
+        state = self.hass.states.get(sensor)
+        current_meter_value = 0.0
+        if state is not None and state.state not in ("unknown", "unavailable"):
+            try:
+                current_meter_value = round(float(state.state) + float(offset), 3)
+            except (ValueError, TypeError):
+                current_meter_value = 0.0
+
         current_meter_id = self._config_entry.options.get(CONF_METER_ID, "")
-        current_obis = self._config_entry.options.get(CONF_OBIS_CODE, "")
+        current_obis = self._config_entry.options.get(CONF_OBIS_CODE)
         current_price = self._config_entry.options.get(CONF_TARIFF_PRICE, 0.0)
         current_price_mode = self._config_entry.options.get(CONF_PRICE_MODE)
         if current_price_mode is None:
@@ -63,53 +73,60 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
         if not current_price:
             current_price = self._config_entry.data.get(CONF_TARIFF_PRICE, 0.0)
 
-        return vol.Schema(
-            {
-                vol.Required("meter_value"): selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=0,
-                        max=999999,
-                        step=1,
-                        unit_of_measurement="kWh",
-                        mode=selector.NumberSelectorMode.BOX,
-                    )
-                ),
-                vol.Optional(CONF_METER_ID, default=current_meter_id): str,
-                vol.Optional(CONF_OBIS_CODE, default=current_obis): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=OBIS_CODE_OPTIONS,
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        custom_value=True,
-                    )
-                ),
-                vol.Optional(CONF_TARIFF_PRICE, default=current_price): selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=0,
-                        max=9999,
-                        step=0.001,
-                        unit_of_measurement="EUR/kWh",
-                        mode=selector.NumberSelectorMode.BOX,
-                    )
-                ),
-                vol.Optional(CONF_PRICE_MODE, default=current_price_mode): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=PRICE_MODE_OPTIONS,
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        translation_key="price_mode",
-                    )
-                ),
-                vol.Optional(CONF_PRICE_SENSOR): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor", multiple=False)
-                ),
-                vol.Optional(CONF_COST_RESET_CYCLE, default=current_cost_reset): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=COST_RESET_OPTIONS,
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        translation_key="cost_reset_cycle",
-                    )
-                ),
-            }
+        schema_entries: dict[Any, Any] = {
+            vol.Required("meter_value", default=current_meter_value): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=999999,
+                    step=1,
+                    unit_of_measurement="kWh",
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+            vol.Optional(CONF_METER_ID, default=current_meter_id): str,
+            vol.Optional(CONF_OBIS_CODE, default=current_obis): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=OBIS_CODE_OPTIONS,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    custom_value=True,
+                )
+            ),
+            vol.Optional(CONF_TARIFF_PRICE, default=current_price): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=9999,
+                    step=0.001,
+                    unit_of_measurement="EUR/kWh",
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+            vol.Optional(CONF_PRICE_MODE, default=current_price_mode): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=PRICE_MODE_OPTIONS,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key="price_mode",
+                )
+            ),
+        }
+
+        if current_price_sensor:
+            schema_entries[vol.Optional(CONF_PRICE_SENSOR, default=current_price_sensor)] = selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor", multiple=False)
+            )
+        else:
+            schema_entries[vol.Optional(CONF_PRICE_SENSOR)] = selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor", multiple=False)
+            )
+
+        schema_entries[vol.Optional(CONF_COST_RESET_CYCLE, default=current_cost_reset)] = selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=COST_RESET_OPTIONS,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+                translation_key="cost_reset_cycle",
+            )
         )
+
+        return vol.Schema(schema_entries)
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage the options - main menu."""
@@ -136,6 +153,6 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="init",
-            data_schema=self._build_meter_correction_schema(),
+            data_schema=self.build_meter_correction_schema(),
             errors=errors,
         )
