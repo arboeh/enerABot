@@ -17,8 +17,10 @@ from .const import (
     CONF_SENSOR,
     CONF_TARIFF_PRICE,
     DOMAIN,
+    ENERGY_SENSOR_DEVICE_CLASSES,
     OPTION_LAST_CORRECTION,
     OPTION_OFFSET,
+    PRICE_SENSOR_DEVICE_CLASSES,
     is_export_obis,
     is_import_obis,
 )

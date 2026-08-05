@@ -59,6 +59,9 @@ def is_export_obis(obis_code: str) -> bool:
     return obis_code.startswith("2.8")
 
 
+ENERGY_SENSOR_DEVICE_CLASSES = ["energy"]
+PRICE_SENSOR_DEVICE_CLASSES = ["monetary"]
+
 UPDATE_INTERVAL = 30
 
 SERVICE_RESET_METER = "reset_meter"
