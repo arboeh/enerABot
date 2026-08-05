@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Missing German/English translation for the `price_sensor` field in the
   initial config flow step (previously only translated in the options flow).
+- Englische Übersetzungsdateien (strings.json, translations/en.json,
+  services.yaml) enthielten fälschlicherweise den deutschen Begriff
+  'Zählerstand' statt 'meter reading'. Jetzt konsistent auf Englisch.
 
 ### Added
 - `number` platform with `EnerABotTariffPriceNumber` (editable tariff price)
