@@ -6,13 +6,19 @@
         "description": "Select an energy meter sensor. The direction (import/export) is derived from the OBIS code (1.8.x = import, 2.8.x = export). Optionally enter the real meter reading to calibrate the offset immediately.",
         "data": {
           "name": "Meter Name",
-          "sensor": "Energy Meter Sensor",
+          "sensor": {
+            "name": "Energy Meter Sensor",
+            "description": "Only sensors with device class 'energy' are shown. If your meter sensor doesn't appear, check that the correct device class is set."
+          },
           "obis_code": "OBIS Code (e.g. 1.8.2 for import, 2.8.2 for export)",
           "initial_meter_value": "Initial Meter Reading (kWh, optional)",
           "meter_id": "Meter ID",
           "tariff_price": "Tariff Price (EUR/kWh)",
           "price_mode": "Price Mode",
-          "price_sensor": "Price Sensor",
+          "price_sensor": {
+            "name": "Price Sensor",
+            "description": "Only sensors with device class 'monetary' are shown. If your price sensor doesn't appear, check that the correct device class is set."
+          },
           "cost_reset_cycle": "Cost Reset Cycle",
           "reading_cycle": "Reading Cycle"
         }
@@ -37,7 +43,10 @@
           "obis_code": "OBIS Code",
           "tariff_price": "Tariff Price (EUR/kWh)",
           "price_mode": "Price Mode",
-          "price_sensor": "Price Sensor",
+          "price_sensor": {
+            "name": "Price Sensor",
+            "description": "Only sensors with device class 'monetary' are shown. If your price sensor doesn't appear, check that the correct device class is set."
+          },
           "cost_reset_cycle": "Cost Reset Cycle"
         }
       }
