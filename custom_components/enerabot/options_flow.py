@@ -111,11 +111,19 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
 
         if current_price_sensor:
             schema_entries[vol.Optional(CONF_PRICE_SENSOR, default=current_price_sensor)] = selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor", multiple=False)
+                selector.EntitySelectorConfig(
+                    domain="sensor",
+                    device_class=PRICE_SENSOR_DEVICE_CLASSES,
+                    multiple=False,
+                )
             )
         else:
             schema_entries[vol.Optional(CONF_PRICE_SENSOR)] = selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor", multiple=False)
+                selector.EntitySelectorConfig(
+                    domain="sensor",
+                    device_class=PRICE_SENSOR_DEVICE_CLASSES,
+                    multiple=False,
+                )
             )
 
         schema_entries[vol.Optional(CONF_TARIFF_PRICE, default=current_price)] = selector.NumberSelector(
