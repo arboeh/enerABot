@@ -53,7 +53,11 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): str,
         vol.Required(CONF_SENSOR): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor", multiple=False)
+            selector.EntitySelectorConfig(
+                domain="sensor",
+                device_class=ENERGY_SENSOR_DEVICE_CLASSES,
+                multiple=False,
+            )
         ),
         vol.Required(CONF_OBIS_CODE): selector.SelectSelector(
             selector.SelectSelectorConfig(
@@ -89,7 +93,11 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
             )
         ),
         vol.Optional(CONF_PRICE_SENSOR): selector.EntitySelector(
-            selector.EntitySelectorConfig(domain="sensor", multiple=False)
+            selector.EntitySelectorConfig(
+                domain="sensor",
+                device_class=PRICE_SENSOR_DEVICE_CLASSES,
+                multiple=False,
+            )
         ),
         vol.Optional(CONF_COST_RESET_CYCLE, default=COST_RESET_NONE): selector.SelectSelector(
             selector.SelectSelectorConfig(
