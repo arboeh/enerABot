@@ -5,7 +5,7 @@
         "title": "enerABot Setup",
         "description": "Select an energy meter sensor. The direction (import/export) is derived from the OBIS code (1.8.x = import, 2.8.x = export). Optionally enter the real meter reading to calibrate the offset immediately. * Required field",
         "data": {
-          "name": "Meter Name",
+          "name": "Meter Name (Required *).",
           "sensor": {
             "name": "Energy Meter Sensor",
             "description": "Energy meter sensor (Required *)."
