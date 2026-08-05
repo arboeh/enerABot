@@ -418,3 +418,73 @@ async def test_form_invalid_obis_code_fails(hass: HomeAssistant) -> None:
 
     assert result2["type"] == FlowResultType.FORM
     assert result2["errors"] == {"base": "cannot_connect"}
+
+
+async def test_sensor_selector_filters_by_energy_device_class(
+    hass: HomeAssistant,
+) -> None:
+    """Test that the sensor EntitySelector filters by 'energy' device class."""
+    schema_dict = config_flow.STEP_USER_DATA_SCHEMA.schema
+    sensor_key = next(k for k in schema_dict if k == CONF_SENSOR)
+    selector_config = schema_dict[sensor_key].config
+    assert selector_config["device_class"] == ["energy"]
+
+
+async def test_price_sensor_selector_filters_by_monetary_device_class(
+    hass: HomeAssistant,
+) -> None:
+    """Test that the price_sensor EntitySelector filters by 'monetary' device class."""
+    schema_dict = config_flow.STEP_USER_DATA_SCHEMA.schema
+    price_sensor_key = next(k for k in schema_dict if k == CONF_PRICE_SENSOR)
+    selector_config = schema_dict[price_sensor_key].config
+    assert selector_config["device_class"] == ["monetary"]
+
+
+async def test_config_flow_still_accepts_valid_energy_sensor(
+    hass: HomeAssistant,
+) -> None:
+    """Test that a sensor with 'energy' device class and numeric state is accepted."""
+    hass.states.async_set(
+        "sensor.test_import",
+        "100.0",
+        {"device_class": "energy"},
+    )
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Energy Sensor",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+    assert result2["data"][CONF_SENSOR] == "sensor.test_import"
+
+
+async def test_config_flow_rejects_non_numeric_sensor_via_validation(
+    hass: HomeAssistant,
+) -> None:
+    """Test that non-numeric sensor states fail validation independently of selector filter."""
+    hass.states.async_set(
+        "sensor.test_import",
+        "abc",
+        {"device_class": "energy"},
+    )
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Test Non-Numeric",
+            "sensor": "sensor.test_import",
+            "obis_code": "1.8.2",
+        },
+    )
+
+    assert result2["type"] == FlowResultType.FORM
+    assert result2["errors"] == {"base": "cannot_connect"}
