@@ -251,3 +251,26 @@ async def test_options_flow_prefills_current_meter_value(
     schema = result["data_schema"].schema
     meter_value_key = next(k for k in schema if str(k) == "meter_value")
     assert meter_value_key.default() == 920.0
+
+
+def test_options_schema_field_order_matches_entity_sort_order(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """Options dialog field order must follow the entity display order."""
+    from custom_components.enerabot.options_flow import EnerABotOptionsFlow
+
+    flow = EnerABotOptionsFlow(mock_config_entry)
+    flow.hass = hass
+    schema = flow.build_meter_correction_schema()
+
+    field_names = [str(key) for key in schema.schema]
+    expected_order = [
+        "meter_value",
+        "meter_id",
+        "obis_code",
+        "cost_reset_cycle",
+        "price_mode",
+        "price_sensor",
+        "tariff_price",
+    ]
+    assert field_names == expected_order

@@ -91,13 +91,11 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
                     custom_value=True,
                 )
             ),
-            vol.Optional(CONF_TARIFF_PRICE, default=current_price): selector.NumberSelector(
-                selector.NumberSelectorConfig(
-                    min=0,
-                    max=9999,
-                    step=0.001,
-                    unit_of_measurement="EUR/kWh",
-                    mode=selector.NumberSelectorMode.BOX,
+            vol.Optional(CONF_COST_RESET_CYCLE, default=current_cost_reset): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=COST_RESET_OPTIONS,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key="cost_reset_cycle",
                 )
             ),
             vol.Optional(CONF_PRICE_MODE, default=current_price_mode): selector.SelectSelector(
@@ -118,11 +116,13 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
                 selector.EntitySelectorConfig(domain="sensor", multiple=False)
             )
 
-        schema_entries[vol.Optional(CONF_COST_RESET_CYCLE, default=current_cost_reset)] = selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=COST_RESET_OPTIONS,
-                mode=selector.SelectSelectorMode.DROPDOWN,
-                translation_key="cost_reset_cycle",
+        schema_entries[vol.Optional(CONF_TARIFF_PRICE, default=current_price)] = selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=0,
+                max=9999,
+                step=0.001,
+                unit_of_measurement="EUR/kWh",
+                mode=selector.NumberSelectorMode.BOX,
             )
         )
 
