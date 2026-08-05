@@ -274,3 +274,95 @@ def test_options_schema_field_order_matches_entity_sort_order(
         "tariff_price",
     ]
     assert field_names == expected_order
+
+
+async def test_price_sensor_selector_in_options_flow_filters_monetary(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Test that the price_sensor EntitySelector in options flow filters by 'monetary' device class.
+
+    The default mock_config_entry has no CONF_PRICE_SENSOR in options or data,
+    so the 'without default' branch of build_meter_correction_schema is exercised.
+    Both branches apply the same device_class filter.
+    """
+    from custom_components.enerabot.options_flow import EnerABotOptionsFlow
+
+    flow = EnerABotOptionsFlow(mock_config_entry)
+    flow.hass = hass
+    schema = flow.build_meter_correction_schema()
+
+    schema_dict = schema.schema
+    price_sensor_key = next(k for k in schema_dict if k == CONF_PRICE_SENSOR)
+    selector_config = schema_dict[price_sensor_key].config
+    assert selector_config["device_class"] == ["monetary"]
+
+
+async def test_options_flow_with_price_sensor_preserves_functionality(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Regression test: options flow with a configured price sensor still works.
+
+    Ensures the device_class filter on the price_sensor EntitySelector does not
+    break the dynamic price mode options flow when a valid price sensor is set.
+    """
+    hass.states.async_set("sensor.test_import", "100.0")
+    hass.states.async_set("sensor.dynamic_price", "0.35")
+
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={
+            **mock_config_entry.options,
+            CONF_PRICE_MODE: PRICE_MODE_DYNAMIC,
+            CONF_PRICE_SENSOR: "sensor.dynamic_price",
+        },
+    )
+
+    result = await hass.config_entries.options.async_init(
+        mock_config_entry.entry_id,
+    )
+
+    result2 = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            "meter_value": 150.0,
+            CONF_PRICE_MODE: PRICE_MODE_DYNAMIC,
+            CONF_PRICE_SENSOR: "sensor.dynamic_price",
+        },
+    )
+    await hass.async_block_till_done()
+
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
+
+
+async def test_options_flow_price_sensor_missing_device_class_still_selectable_via_yaml(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """A legacy price sensor without 'monetary' device_class still works as a default.
+
+    The device_class filter only affects which entities are shown in the UI
+    dropdown for new selections; an already-configured price_sensor continues
+    to be used as the default regardless of its device_class, because the
+    default is read directly from the config entry data/options.
+    """
+    hass.states.async_set("sensor.legacy_price", "0.35")
+
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={
+            **mock_config_entry.options,
+            CONF_PRICE_SENSOR: "sensor.legacy_price",
+        },
+    )
+
+    from custom_components.enerabot.options_flow import EnerABotOptionsFlow
+
+    flow = EnerABotOptionsFlow(mock_config_entry)
+    flow.hass = hass
+    schema = flow.build_meter_correction_schema()
+
+    schema_dict = schema.schema
+    price_sensor_key = next(k for k in schema_dict if k == CONF_PRICE_SENSOR)
+    assert price_sensor_key.default() == "sensor.legacy_price"
