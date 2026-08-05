@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Sensor-Auswahl bei Einrichtung/Konfiguration auf passende Device
+  Classes beschränkt (energy für Energiezähler, monetary für Preis-Sensor),
+  um Fehlkonfigurationen zu vermeiden.
 - Options dialog field order now matches the alphabetical entity display
   order on the device page (cost reset cycle, price mode, tariff price).
 
