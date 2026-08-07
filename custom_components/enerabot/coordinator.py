@@ -5,9 +5,8 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant
@@ -35,12 +34,6 @@ from .const import (
     UPDATE_INTERVAL,
 )
 
-if TYPE_CHECKING:
-    from homeassistant.helpers.typing import ServiceDataType
-
-    # EventStateChangedData was introduced in HA 2026.6; alias for type checking
-    EventStateChangedData = ServiceDataType
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -54,7 +47,6 @@ class EnerABotCoordinator(DataUpdateCoordinator[float | None]):
             LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=UPDATE_INTERVAL),
-            config_entry=config_entry,
         )
         self.config_entry = config_entry
         self.sensor = config_entry.data[CONF_SENSOR]
@@ -158,11 +150,11 @@ class EnerABotCoordinator(DataUpdateCoordinator[float | None]):
         self.unsub_state_changes = async_track_state_change_event(
             self.hass,
             sensors,
-            cast("Callable[[Event[Any]], Awaitable[None]]", self._handle_state_change),
+            self._handle_state_change,
         )
         LOGGER.info("Started state change listener for sensor %s", self.sensor)
 
-    async def _handle_state_change(self, event: Event[EventStateChangedData]) -> None:
+    async def _handle_state_change(self, event: Event[Any]) -> None:
         """Handle state change events from the source sensor."""
         now = datetime.now(UTC).timestamp()
         if self._last_refresh is not None and now - self._last_refresh < MIN_REFRESH_INTERVAL:
