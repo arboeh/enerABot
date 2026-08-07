@@ -47,7 +47,7 @@ if (-not (Test-Path $ManifestJson)) {
 function Get-TomlVersion {
     param([string]$Path)
     $content = Get-Content $Path -Raw
-    if ($content -match '^\[project\]\s*\nversion\s*=\s*"([^"]+)"'m) {
+    if ($content -match '(?m)^\[project\]\s*\nname\s*=\s*"[^"]*"\s*\nversion\s*=\s*"([^"]+)"') {
         return $matches[1]
     }
     throw "Could not find [project].version in $Path"
@@ -56,7 +56,7 @@ function Get-TomlVersion {
 function Set-TomlVersion {
     param([string]$Path, [string]$NewVersion)
     $content = Get-Content $Path -Raw
-    $content -creplace '(^\[project\]\s*\nversion\s*=\s*")([^"]+)(")', "`$1$NewVersion`$3" |
+    $content -replace '(?m)^(version\s*=\s*")[^"]+(")', "`$1$NewVersion`$2" |
         Set-Content $Path -Encoding utf8
 }
 
@@ -70,7 +70,7 @@ function Set-ManifestVersion {
     param([string]$Path, [string]$NewVersion)
     $json = Get-Content $Path -Raw | ConvertFrom-Json
     $json.version = $NewVersion
-    $json | ConvertTo-Json -Depth 10 | Set-Content $Path -Encoding utf8 -NoNewline
+    $json | ConvertTo-Json -Depth 10 -Compress | ConvertFrom-Json | ConvertTo-Json -Depth 10 | Set-Content $Path -Encoding utf8 -NoNewline
     Add-Content $Path "`n"
 }
 

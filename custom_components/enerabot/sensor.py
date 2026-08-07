@@ -3,6 +3,7 @@
 """Sensor platform for the enerABot integration."""
 
 import logging
+from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
@@ -12,17 +13,22 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     CONF_METER_ID,
-    CONF_NAME,
     CONF_OBIS_CODE,
+    CONF_PRICE_MODE,
+    CONF_PRICE_SENSOR,
     CONF_SENSOR,
     CONF_TARIFF_PRICE,
     DOMAIN,
     ENERGY_SENSOR_DEVICE_CLASSES,
     OPTION_LAST_CORRECTION,
     OPTION_OFFSET,
+    PRICE_MODE_DYNAMIC,
+    PRICE_MODE_FIXED,
+    PRICE_MODE_NONE,
     PRICE_SENSOR_DEVICE_CLASSES,
     is_export_obis,
     is_import_obis,
+    make_device_info,
 )
 from .coordinator import EnerABotCoordinator
 
@@ -59,12 +65,7 @@ class EnerABotSensor(CoordinatorEntity[EnerABotCoordinator], SensorEntity):  # t
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_native_unit_of_measurement = "kWh"
 
-        meter_name = entry.data.get(CONF_NAME, entry.title)
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": meter_name,
-            "manufacturer": "enerABot",
-        }
+        self._attr_device_info = make_device_info(entry)
 
     @property
     def native_value(self) -> float | None:  # type: ignore[reportIncompatibleVariableOverride]
@@ -72,7 +73,7 @@ class EnerABotSensor(CoordinatorEntity[EnerABotCoordinator], SensorEntity):  # t
         return self.coordinator.data
 
     @property
-    def extra_state_attributes(self) -> dict:  # type: ignore[reportIncompatibleVariableOverride]
+    def extra_state_attributes(self) -> dict[str, Any]:  # type: ignore[reportIncompatibleVariableOverride]
         """Return additional attributes."""
         attrs = {}
         offset = self.entry.options.get(OPTION_OFFSET)
@@ -105,12 +106,7 @@ class EnerABotCostSensor(CoordinatorEntity[EnerABotCoordinator], SensorEntity):
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.TOTAL
         self._attr_native_unit_of_measurement = "EUR"
-        meter_name = entry.data.get(CONF_NAME, entry.title)
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": meter_name,
-            "manufacturer": "enerABot",
-        }
+        self._attr_device_info = make_device_info(entry)
 
     @property
     def native_value(self) -> float | None:  # type: ignore[reportIncompatibleVariableOverride]
@@ -119,5 +115,10 @@ class EnerABotCostSensor(CoordinatorEntity[EnerABotCoordinator], SensorEntity):
 
     @property
     def available(self) -> bool:  # type: ignore[reportIncompatibleVariableOverride]
-        """Return True if tariff price is configured."""
-        return bool(self.entry.options.get(CONF_TARIFF_PRICE))
+        """Return True if a price is configured for the current price mode."""
+        price_mode = self.entry.options.get(CONF_PRICE_MODE, PRICE_MODE_NONE)
+        if price_mode == PRICE_MODE_FIXED:
+            return bool(self.entry.options.get(CONF_TARIFF_PRICE))
+        if price_mode == PRICE_MODE_DYNAMIC:
+            return bool(self.entry.options.get(CONF_PRICE_SENSOR))
+        return False

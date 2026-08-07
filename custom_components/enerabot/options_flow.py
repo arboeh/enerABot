@@ -32,6 +32,7 @@ from .const import (
     OBIS_CODE_OPTIONS,
     OPTION_LAST_CORRECTION,
     OPTION_OFFSET,
+    PRICE_MODE_NONE,
     PRICE_MODE_OPTIONS,
     PRICE_SENSOR_DEVICE_CLASSES,
 )
@@ -61,15 +62,11 @@ class EnerABotOptionsFlow(config_entries.OptionsFlow):
         current_meter_id = self._config_entry.options.get(CONF_METER_ID, "")
         current_obis = self._config_entry.options.get(CONF_OBIS_CODE)
         current_price = self._config_entry.options.get(CONF_TARIFF_PRICE, 0.0)
-        current_price_mode = self._config_entry.options.get(CONF_PRICE_MODE)
-        if current_price_mode is None:
-            current_price_mode = self._config_entry.data.get(CONF_PRICE_MODE, "none")
+        current_price_mode = self._config_entry.options.get(CONF_PRICE_MODE, PRICE_MODE_NONE)
         current_price_sensor = self._config_entry.options.get(CONF_PRICE_SENSOR)
-        if current_price_sensor is None:
-            current_price_sensor = self._config_entry.data.get(CONF_PRICE_SENSOR)
         current_cost_reset = self._config_entry.options.get(CONF_COST_RESET_CYCLE, COST_RESET_NONE)
 
-        # Fall back to data-level values if not in options
+        # Fall back to data-level values for fields that may still live in data
         if not current_obis:
             current_obis = self._config_entry.data.get(CONF_OBIS_CODE, "")
         if not current_price:

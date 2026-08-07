@@ -88,6 +88,12 @@ def register_services(hass: HomeAssistant) -> None:
             DOMAIN,
             "set_energy_meter",
             handle_set_energy_meter,
+            schema=vol.Schema(
+                {
+                    vol.Required("entity_id"): str,
+                    vol.Required("meter_value"): vol.Coerce(float),
+                }
+            ),
         )
 
     if not hass.services.has_service(DOMAIN, SERVICE_RESET_METER):
@@ -194,43 +200,47 @@ async def calculate_and_store_offset(
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate old dual-sensor entries (version 1) to single-sensor entries (version 2)."""
-    if entry.version == 1 and "import_sensor" in entry.data:
-        LOGGER.info("Migrating enerABot entry %s to version 2", entry.entry_id)
-        import_sensor = entry.data.get("import_sensor")
-        export_sensor = entry.data.get("export_sensor")
+    if entry.version != 1:
+        return True
+    if "import_sensor" not in entry.data and "export_sensor" not in entry.data:
+        return True
 
-        if import_sensor:
-            hass.config_entries.async_update_entry(
-                entry,
-                data={CONF_NAME: entry.data[CONF_NAME], CONF_SENSOR: import_sensor, CONF_OBIS_CODE: "1.8.2"},
-                options={
-                    OPTION_OFFSET: entry.options.get("offset_import", 0.0),
-                    OPTION_LAST_CORRECTION: entry.options.get("last_correction_import"),
+    LOGGER.info("Migrating enerABot entry %s to version 2", entry.entry_id)
+    import_sensor = entry.data.get("import_sensor")
+    export_sensor = entry.data.get("export_sensor")
+
+    if import_sensor:
+        hass.config_entries.async_update_entry(
+            entry,
+            data={CONF_NAME: entry.data[CONF_NAME], CONF_SENSOR: import_sensor, CONF_OBIS_CODE: "1.8.2"},
+            options={
+                OPTION_OFFSET: entry.options.get("offset_import", 0.0),
+                OPTION_LAST_CORRECTION: entry.options.get("last_correction_import"),
+            },
+            version=2,
+        )
+    if export_sensor and not import_sensor:
+        hass.config_entries.async_update_entry(
+            entry,
+            data={CONF_NAME: entry.data[CONF_NAME], CONF_SENSOR: export_sensor, CONF_OBIS_CODE: "2.8.2"},
+            options={
+                OPTION_OFFSET: entry.options.get("offset_export", 0.0),
+                OPTION_LAST_CORRECTION: entry.options.get("last_correction_export"),
+            },
+            version=2,
+        )
+    elif export_sensor and import_sensor:
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN,
+                context={"source": "import"},
+                data={
+                    CONF_NAME: f"{entry.data[CONF_NAME]} Export",
+                    CONF_SENSOR: export_sensor,
+                    CONF_OBIS_CODE: "2.8.2",
                 },
-                version=2,
             )
-        if export_sensor and not import_sensor:
-            hass.config_entries.async_update_entry(
-                entry,
-                data={CONF_NAME: entry.data[CONF_NAME], CONF_SENSOR: export_sensor, CONF_OBIS_CODE: "2.8.2"},
-                options={
-                    OPTION_OFFSET: entry.options.get("offset_export", 0.0),
-                    OPTION_LAST_CORRECTION: entry.options.get("last_correction_export"),
-                },
-                version=2,
-            )
-        elif export_sensor and import_sensor:
-            hass.async_create_task(
-                hass.config_entries.flow.async_init(
-                    DOMAIN,
-                    context={"source": "import"},
-                    data={
-                        CONF_NAME: f"{entry.data[CONF_NAME]} Export",
-                        CONF_SENSOR: export_sensor,
-                        CONF_OBIS_CODE: "2.8.2",
-                    },
-                )
-            )
+        )
     return True
 
 
@@ -239,7 +249,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
+        coordinator = hass.data[DOMAIN].pop(entry.entry_id, None)
+        if coordinator is not None:
+            await coordinator.async_shutdown()
 
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN, None)

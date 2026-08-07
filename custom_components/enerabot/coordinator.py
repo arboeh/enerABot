@@ -2,11 +2,14 @@
 
 """Coordinator for the enerABot integration."""
 
-import inspect
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import Event, EventStateChangedData, HomeAssistant
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -20,6 +23,7 @@ from .const import (
     COST_RESET_NONE,
     COST_RESET_YEARLY,
     DOMAIN,
+    MIN_REFRESH_INTERVAL,
     OPTION_COST_LAST_ENERGY,
     OPTION_COST_PERIOD_START,
     OPTION_COST_TOTAL,
@@ -36,18 +40,14 @@ LOGGER = logging.getLogger(__name__)
 class EnerABotCoordinator(DataUpdateCoordinator[float | None]):
     """Class to manage fetching data from the energy meter."""
 
-    def __init__(self, hass, config_entry) -> None:
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
         """Initialize the coordinator."""
-        kwargs: dict[str, Any] = {
-            "name": DOMAIN,
-            "update_interval": timedelta(seconds=UPDATE_INTERVAL),
-        }
-        if "config_entry" in inspect.signature(DataUpdateCoordinator.__init__).parameters:
-            kwargs["config_entry"] = config_entry
         super().__init__(
             hass,
             LOGGER,
-            **kwargs,
+            name=DOMAIN,
+            update_interval=timedelta(seconds=UPDATE_INTERVAL),
+            config_entry=config_entry,
         )
         self.config_entry = config_entry
         self.sensor = config_entry.data[CONF_SENSOR]
@@ -56,6 +56,7 @@ class EnerABotCoordinator(DataUpdateCoordinator[float | None]):
         self._cost_period_start: str | None = config_entry.options.get(OPTION_COST_PERIOD_START)
         self._cost_last_energy: float | None = config_entry.options.get(OPTION_COST_LAST_ENERGY)
         self._cost_price: float | None = None
+        self._last_refresh: float | None = None
 
     def _calculate_offset_value(self) -> float | None:
         """Calculate the energy value with offset applied."""
@@ -154,8 +155,13 @@ class EnerABotCoordinator(DataUpdateCoordinator[float | None]):
         )
         LOGGER.info("Started state change listener for sensor %s", self.sensor)
 
-    async def _handle_state_change(self, event) -> None:
+    async def _handle_state_change(self, event: Event[EventStateChangedData]) -> None:
         """Handle state change events from the source sensor."""
+        now = datetime.now(UTC).timestamp()
+        if self._last_refresh is not None and now - self._last_refresh < MIN_REFRESH_INTERVAL:
+            LOGGER.debug("Skipping state change refresh for sensor %s (debounced)", self.sensor)
+            return
+        self._last_refresh = now
         LOGGER.debug("Sensor state changed: %s", event.data.get("entity_id"))
         await self.async_request_refresh()
 

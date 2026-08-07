@@ -12,13 +12,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     CONF_COST_RESET_CYCLE,
-    CONF_NAME,
     CONF_PRICE_MODE,
     COST_RESET_NONE,
     COST_RESET_OPTIONS,
     DOMAIN,
     PRICE_MODE_NONE,
     PRICE_MODE_OPTIONS,
+    make_device_info,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -51,12 +51,7 @@ class EnerABotPriceModeSelect(SelectEntity):
         self.hass = hass
         self.entry = entry
         self._attr_unique_id = f"{entry.entry_id}_price_mode"
-        meter_name = entry.data.get(CONF_NAME, entry.title)
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": meter_name,
-            "manufacturer": "enerABot",
-        }
+        self._attr_device_info = make_device_info(entry)
 
     @property
     def current_option(self) -> str:  # type: ignore[reportIncompatibleVariableOverride]
@@ -83,12 +78,7 @@ class EnerABotCostResetCycleSelect(SelectEntity):
         self.hass = hass
         self.entry = entry
         self._attr_unique_id = f"{entry.entry_id}_cost_reset_cycle"
-        meter_name = entry.data.get(CONF_NAME, entry.title)
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": meter_name,
-            "manufacturer": "enerABot",
-        }
+        self._attr_device_info = make_device_info(entry)
 
     @property
     def current_option(self) -> str:  # type: ignore[reportIncompatibleVariableOverride]

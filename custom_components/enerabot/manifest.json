@@ -7,6 +7,6 @@
   "documentation": "https://github.com/arboeh/enerABot",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/arboeh/enerABot/issues",
-  "requirements": [],
+  "requirements": ["homeassistant>=2024.2.0"],
   "version": "0.3.1"
 }

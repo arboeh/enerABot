@@ -294,6 +294,12 @@ async def test_cost_sensor_unavailable_without_price(hass: HomeAssistant, mock_c
     from custom_components.enerabot.coordinator import EnerABotCoordinator
     from custom_components.enerabot.sensor import EnerABotCostSensor
 
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={**mock_config_entry.options, CONF_PRICE_MODE: PRICE_MODE_FIXED},
+    )
+    await hass.async_block_till_done()
+
     coordinator = EnerABotCoordinator(hass, mock_config_entry)
     sensor = EnerABotCostSensor(coordinator, mock_config_entry)
 

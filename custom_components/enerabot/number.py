@@ -10,7 +10,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_NAME, CONF_TARIFF_PRICE, DOMAIN, OPTION_OFFSET
+from .const import CONF_TARIFF_PRICE, OPTION_OFFSET, make_device_info
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,12 +46,7 @@ class EnerABotTariffPriceNumber(NumberEntity):
         self.hass = hass
         self.entry = entry
         self._attr_unique_id = f"{entry.entry_id}_tariff_price"
-        meter_name = entry.data.get(CONF_NAME, entry.title)
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": meter_name,
-            "manufacturer": "enerABot",
-        }
+        self._attr_device_info = make_device_info(entry)
 
     @property
     def native_value(self) -> float | None:  # type: ignore[reportIncompatibleVariableOverride]
@@ -84,12 +79,7 @@ class EnerABotOffsetNumber(NumberEntity):
         self.hass = hass
         self.entry = entry
         self._attr_unique_id = f"{entry.entry_id}_offset"
-        meter_name = entry.data.get(CONF_NAME, entry.title)
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": meter_name,
-            "manufacturer": "enerABot",
-        }
+        self._attr_device_info = make_device_info(entry)
 
     @property
     def native_value(self) -> float | None:  # type: ignore[reportIncompatibleVariableOverride]

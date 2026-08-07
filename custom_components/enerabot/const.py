@@ -4,6 +4,9 @@
 
 from __future__ import annotations
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.device_registry import DeviceInfo
+
 DOMAIN = "enerabot"
 
 PLATFORMS = ["sensor", "button", "number", "select"]
@@ -63,6 +66,17 @@ ENERGY_SENSOR_DEVICE_CLASSES = ["energy"]
 PRICE_SENSOR_DEVICE_CLASSES = ["monetary"]
 
 UPDATE_INTERVAL = 30
+MIN_REFRESH_INTERVAL = 5
 
 SERVICE_RESET_METER = "reset_meter"
 ATTR_RESET_ALL = "reset_all"
+
+
+def make_device_info(entry: ConfigEntry) -> DeviceInfo:
+    """Build a standard device_info for all enerABot entities."""
+    meter_name = entry.data.get(CONF_NAME, entry.title)
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=meter_name,
+        manufacturer="enerABot",
+    )
