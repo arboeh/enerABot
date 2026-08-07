@@ -5,11 +5,12 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Event, EventStateChangedData, HomeAssistant
+from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -33,6 +34,12 @@ from .const import (
     PRICE_MODE_NONE,
     UPDATE_INTERVAL,
 )
+
+if TYPE_CHECKING:
+    from homeassistant.helpers.typing import ServiceDataType
+
+    # EventStateChangedData was introduced in HA 2026.6; alias for type checking
+    EventStateChangedData = ServiceDataType
 
 LOGGER = logging.getLogger(__name__)
 
@@ -151,7 +158,7 @@ class EnerABotCoordinator(DataUpdateCoordinator[float | None]):
         self.unsub_state_changes = async_track_state_change_event(
             self.hass,
             sensors,
-            self._handle_state_change,
+            cast("Callable[[Event[Any]], Awaitable[None]]", self._handle_state_change),
         )
         LOGGER.info("Started state change listener for sensor %s", self.sensor)
 
